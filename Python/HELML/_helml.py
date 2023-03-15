@@ -6,7 +6,7 @@ class HELML:
     @staticmethod
     def encode(arr, url_mode=False, val_encoder=True):
         results_arr = []
-        if not isinstance(arr, (list, dict)):
+        if not isinstance(arr, (list, dict, tuple)):
             raise ValueError("List or dictionary required")
 
         str_imp = "~" if url_mode else "\n"
@@ -19,9 +19,17 @@ class HELML:
     
     @staticmethod
     def _encode(arr, results_arr, val_encoder=True, level=0, lvl_ch=":", spc_ch=" "):
+        # convert arr to dict if need
+        if not isinstance(arr, dict):
+            arr = {index: value for index, value in enumerate(arr)}
+
         for key, value in arr.items():
-            # encode key in base64url if it contains unwanted characters
+            if not isinstance(key, str):
+                key = str(key)
+
+            # get first char
             fc = key[0]
+            # encode key in base64url if it contains unwanted characters
             if lvl_ch in key or "~" in key or fc == "#" or fc == spc_ch or fc == ' ':
                 fc = "-"
             if fc == "-" or key[-1] == spc_ch or key[-1] == ' ' or not all(c.isprintable() for c in key):
@@ -31,7 +39,7 @@ class HELML:
             # add the appropriate number of colons to the left of the key, based on the current level
             key = lvl_ch * level + key
 
-            if isinstance(value, dict):
+            if isinstance(value, (list, dict, tuple)):
                 # if the value is a dictionary, call this function recursively and increase the level
                 results_arr.append(key)
                 HELML._encode(value, results_arr, val_encoder, level + 1, lvl_ch, spc_ch)
