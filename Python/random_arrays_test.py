@@ -1,5 +1,7 @@
 import unittest
+import subprocess
 
+import time
 import random
 import string
 from typing import Any, Dict, List, Union
@@ -46,10 +48,50 @@ def generate_nested_dict(depth: int = 3, size: int = 5) -> Dict[str, Any]:
         return {random_string(random.randint(3, 5)): (generate_nested_dict(depth - 1, size) if random.random() < 0.5 else random_value()) for _ in range(size)}
 
 class TestHELML(unittest.TestCase):
-    def test_encode_decode(self):
-        for _ in range(100):  # количество случайных тестов
+    def test_encode_decode_url_mode(self):
+        for _ in range(50):  # количество случайных тестов
             original_data = generate_nested_dict()
             encoded_data = HELML.encode(original_data, True)
             decoded_data = HELML.decode(encoded_data)
-            assert decoded_data == original_data, f"Ошибка: исходные данные {original_data}, после кодирования и декодирования {decoded_data}"
+            assert decoded_data == original_data, f"Error: source data {original_data}, after encode-decode {decoded_data}"
 
+    def test_encode_decode_lines_mode(self):
+        for _ in range(50):  # количество случайных тестов
+            original_data = generate_nested_dict()
+            encoded_data = HELML.encode(original_data, False)
+            decoded_data = HELML.decode(encoded_data)
+            assert decoded_data == original_data, f"Error: source data {original_data}, after encode-decode {decoded_data}"
+
+    def test_console_php_subprocess(self):
+        for _ in range(100):  # количество случайных тестов
+            original_data = generate_nested_dict()
+            encoded_data = HELML.encode(original_data, True)
+            result = subprocess.run(['php', 'PHP/HELML/console_test.php', encoded_data], stdout=subprocess.PIPE)
+            encoded_data = result.stdout.decode('utf-8').strip()
+            decoded_data = HELML.decode(encoded_data)
+            assert decoded_data == original_data, f"Error: source data {original_data}, after encode-decode {decoded_data}"
+
+    def test_rows_decode(self):
+        with open('test_req_rows.txt', 'r') as f:
+            lines = f.readlines()
+
+        start_time = time.time()
+        for line in lines:
+            enco_line = line.strip()
+            arr = HELML.decode(enco_line)
+            self.assertIsInstance(arr, dict)
+            row = HELML.encode(arr, True)
+            #row = row.encode('utf-8').strip()
+            a2 = HELML.decode(row)
+            if not a2 == arr:
+                print("ERR")
+
+
+        end_time = time.time()
+
+        print("Execution time: ", end_time - start_time, " seconds, total: ", len(lines))
+
+
+if __name__ == '__main__':
+    t = TestHELML()
+    t.test_rows_decode()

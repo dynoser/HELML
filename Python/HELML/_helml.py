@@ -174,7 +174,8 @@ class HELML:
 
     @staticmethod
     def valueDecoder(encoded_value, spc_ch=' '):
-        fc = encoded_value[0]
+        fc = '' if not len(encoded_value) else encoded_value[0]
+
         if spc_ch == fc:
             if encoded_value[:2] != spc_ch * 2:
                 # if the string starts with only one space, return the string after it
