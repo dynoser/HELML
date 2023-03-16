@@ -205,7 +205,10 @@ class HELML:
             encoded_value = encoded_value[1:-1] # trim the presumed quotes at the edges and return the interior
             if fc == "'":
                 return encoded_value
-            return encoded_value.encode('utf-8').decode('unicode_escape')
+            try:
+                return encoded_value.encode('utf-8').decode('unicode_escape')
+            except ValueError:
+                return False
 
         # if there are no spaces or quotes at the beginning, the value should be in base64
         try:
