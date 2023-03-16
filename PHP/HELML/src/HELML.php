@@ -93,21 +93,20 @@ class HELML {
 
     public static function decode($src_rows, $val_decoder = true) {
         // If the input is an array, use it. Otherwise, split the input string into an array.
+        $lvl_ch = ':';
+        $spc_ch = ' ';
         if (is_array($src_rows)) {
             $str_arr = $src_rows;
         } elseif (is_string($src_rows)) {
-            foreach(["\n", "\r", "~"] as $exploder_ch) {
+            foreach(["\n", "~", "\r"] as $exploder_ch) {
                 if (false !== strpos($src_rows, $exploder_ch)) {
-                    if ("~" === $exploder_ch) {
-                        $lvl_ch = '.';
-                        $spc_ch = '_';
-                    } else {
-                        $lvl_ch = ':';
-                        $spc_ch = ' ';
-                    }
-                    $str_arr = explode($exploder_ch, $src_rows);
                     break;
                 }
+            }
+            $str_arr = explode($exploder_ch, $src_rows);
+            if ("~" === $exploder_ch) {
+                $lvl_ch = '.';
+                $spc_ch = '_';
             }
         } else {
             throw new InvalidArgumentException("Array or String required");
@@ -196,7 +195,7 @@ class HELML {
                     return self::base64Uencode($value);
                 } elseif (!strlen($value) || ($spc_ch === $value[0]) || ($spc_ch == substr($value, -1)) || ctype_space(substr($value, -1))) {
                     // for empty strings or those that have spaces at the beginning or end
-                    return '"' . $value . '"';
+                    return "'" . $value . "'";
                 } else {
                     // if the value is simple, just add one space at the beginning
                     return $spc_ch . $value;
@@ -206,6 +205,10 @@ class HELML {
             case 'NULL':
                 return $spc_ch . $spc_ch . 'N';
             case 'double':
+            case 'float':
+                if (is_nan($value)) {
+                    return $spc_ch . $spc_ch . 'NaN';
+                }
                 if ('_' === $spc_ch) {
                     // for url-mode because dot-inside
                     return self::base64Uencode($value);
@@ -227,12 +230,14 @@ class HELML {
             }
             // if the string starts with two spaces, then it encodes a non-string value
             $encodedValue = substr($encodedValue, 2); // strip left spaces
-            if ($encodedValue === 'N') {
+            if ($encodedValue === 'N' || $encodedValue === 'U') {
                 return null;
             } elseif ($encodedValue === 'T') {
                 return true;
             } elseif ($encodedValue === 'F') {
                 return false;
+            } elseif ($encodedValue === 'NaN') {
+                return NAN;
             }
             if (is_numeric($encodedValue)) {
                 // it's probably a numeric value
@@ -251,10 +256,10 @@ class HELML {
             if ("'" === $fc) {
                 return $encodedValue;
             }
-            return stripcslashes($encodedValue)
+            return stripcslashes($encodedValue);
         }
         // if there are no spaces or quotes at the beginning, the value should be in base64
-        $decoded = self::base64Udecode($encodedValue)
+        $decoded = self::base64Udecode($encodedValue);
         if (false === $decoded) {
             return $encodedValue; // Fallback if can't decode
         }

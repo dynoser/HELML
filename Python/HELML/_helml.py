@@ -54,6 +54,8 @@ class HELML:
 
     @staticmethod
     def decode(src_rows, val_decoder=True):
+        lvl_ch = ":"
+        spc_ch = " "
         # If the input is an array, use it. Otherwise, split the input string into an array.
         if isinstance(src_rows, (list, dict)):
             if isinstance(src_rows, dict):
@@ -62,19 +64,16 @@ class HELML:
                 str_arr = src_rows
 
         elif isinstance(src_rows, str):
-            for exploder_ch in ["\n", "\r", "~"]:
+            for exploder_ch in ["\n", "~", "\r"]:
                 if exploder_ch in src_rows:
-                    if "~" == exploder_ch:
-                        lvl_ch = "."
-                        spc_ch = "_"
-                    else:
-                        lvl_ch = ":"
-                        spc_ch = " "
-
-                    str_arr = src_rows.split(exploder_ch)
                     break
-            else:
-                raise ValueError("Invalid input string")
+
+            str_arr = src_rows.split(exploder_ch)
+
+            if "~" == exploder_ch:
+                lvl_ch = "."
+                spc_ch = "_"
+
         else:
             raise ValueError("Array or String required")
 
@@ -154,7 +153,7 @@ class HELML:
                 return HELML.base64url_encode(value)
             elif not value or value[0] == spc_ch or value[-1] == spc_ch or value[-1] == ' ':
                 # for empty strings or those that have spaces at the beginning or end
-                return '"' + value + '"'
+                return "'" + value + "'"
             else:
                 # if the value is simple, just add one space at the beginning
                 return spc_ch + value
@@ -163,9 +162,12 @@ class HELML:
         elif value_type == "NoneType":
             return spc_ch * 2 + "N"
         elif value_type == "float":
-            if spc_ch == "_": # for url-mode because float contain dot-inside
-                return HELML.base64url_encode(str(value))
-            return spc_ch * 2 + str(value)
+            value = str(value)
+            if value == 'nan':
+                value = 'NaN'
+            elif spc_ch == "_": # for url-mode because float contain dot-inside
+                return HELML.base64url_encode(value)
+            return spc_ch * 2 + value
         elif value_type == "int":
             return spc_ch * 2 + str(value)
         else:
