@@ -245,12 +245,20 @@ class HELML {
                 }
             }
             // other encoding options are not currently supported
-            throw new Exception("Invalid encoded value");
+            return $encodedValue;
         } elseif ('"' === $fc || "'" === $fc) { // it's likely that the string is enclosed in single or double quotes
-            return substr($encodedValue, 1, -1); // trim the presumed quotes at the edges and return the interior
+            $encodedValue = substr($encodedValue, 1, -1); // trim the presumed quotes at the edges and return the interior
+            if ("'" === $fc) {
+                return $encodedValue;
+            }
+            return stripcslashes($encodedValue)
         }
         // if there are no spaces or quotes at the beginning, the value should be in base64
-        return self::base64Udecode($encodedValue);
+        $decoded = self::base64Udecode($encodedValue)
+        if (false === $decoded) {
+            return $encodedValue; // Fallback if can't decode
+        }
+        return $decoded;
     }
 
     public static function base64Uencode($str) {

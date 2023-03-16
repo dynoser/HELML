@@ -197,13 +197,19 @@ class HELML:
                 else:
                     # if there's no decimal point, it's an integer
                     return int(encoded_value)
-            # other encoding options are not currently supported
-            raise Exception("Invalid encoded value")
+
+            return encoded_value
         elif fc == '"' or fc == "'":  # it's likely that the string is enclosed in single or double quotes
-            return encoded_value[1:-1]  # trim the presumed quotes at the edges and return the interior
+            encoded_value = encoded_value[1:-1] # trim the presumed quotes at the edges and return the interior
+            if fc == "'":
+                return encoded_value
+            return encoded_value.encode('utf-8').decode('unicode_escape')
 
         # if there are no spaces or quotes at the beginning, the value should be in base64
-        return HELML.base64url_decode(encoded_value)
+        try:
+            return HELML.base64url_decode(encoded_value)
+        except ValueError:
+            return encoded_value
 
     @staticmethod
     def base64url_encode(string):
