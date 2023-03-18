@@ -1,4 +1,4 @@
-class HELML {
+export default class HELML {
     static encode(arr, url_mode = false, val_encoder = true) {
         let results_arr = [];
 

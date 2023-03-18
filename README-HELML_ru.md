@@ -2,6 +2,8 @@
 
 ## HELML (Header-Like Markup Language)
 
+![helml-logo](logo/icon.png)
+
 HELML (HEader-Like Markup Language) - это язык разметки, похожий на формат заголовков HTTP.
 
 Например, этот текст в формате HELML:
