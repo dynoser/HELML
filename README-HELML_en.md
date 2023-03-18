@@ -37,7 +37,7 @@ If you decode this text through HELML.decode, you get an array `[key] => 'Value'
     You can comment out some lines at the beginning of the line.
 
 
-# Invested arrays
+# Nested arrays
 
 ## The HELML format supports any array-structure, with no restrictions on nesting levels.
 
