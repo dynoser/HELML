@@ -49,12 +49,14 @@ Result of encode:
 ```python
 One:  1
 Two:  2
-Three
+Three:
 :0:  1
 :1:  2
 :2:  3
-Four
+Four:
 :0:  4
 :1:  5
 :2:  6
+
+{'One': 1, 'Two': 2, 'Three': [1, 2, 3], 'Four': [4, 5, 6]}
 ````
