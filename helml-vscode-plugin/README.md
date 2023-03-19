@@ -4,14 +4,11 @@ HELML is a vscode extension to encode/decode HELML data. It can encode multi-lin
 
 ## Features
 
-You can select text and encode/decode to/from HELML. Search in command pallete for HELML or use the key bindings.
+You can select text and encode/decode to/from HELML. Search in command pallete for HELML.
 
-## Key Bindings
+Press F1 and type "HELML", then select "HELML fromJSON" or "HELML toJSON"
 
-```
-HELML to JSON:  Ctrl+Shift+2 (Ctrl+Cmd+2 in Mac)
-JSON to HELML:  Ctrl+Shift+4 (Ctrl+Cmd+4 in Mac)
-```
+![Demo](https://i.imgur.com/WyGbJmO.gif)
 
 ## Release Notes
 
