@@ -1,4 +1,4 @@
-export default class HELML {
+class HELML {
     static encode(arr, url_mode = false, val_encoder = true) {
         let results_arr = [];
 
@@ -99,7 +99,7 @@ export default class HELML {
             const firstDiv = line.indexOf(lvl_ch);
             let key = firstDiv === -1 ? line : line.substring(0, firstDiv);
             let value = firstDiv === -1 ? null : line.substring(firstDiv + 1);            
-     
+    
             // Decode the key if it starts with an equals sign
             if (typeof key === "string" && key.charAt(0) === '-') {
                 key = HELML.base64Udecode(key.substring(1));
@@ -221,7 +221,7 @@ export default class HELML {
         // if there are no spaces or quotes at the beginning, the value should be in base64
         return HELML.base64Udecode(encodedValue);
     }
-        
+
     static base64Uencode(str) {
         let base64;
     
@@ -237,7 +237,7 @@ export default class HELML {
     
         return base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
     }
-
+            
     static base64Udecode(str) {
         str = str.replace(/-/g, '+').replace(/_/g, '/');
         while (str.length % 4) {
@@ -278,3 +278,5 @@ export default class HELML {
     }
     
 }    
+
+module.exports = HELML;
