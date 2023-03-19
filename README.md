@@ -3,10 +3,20 @@
 
 # HELML (Header-Like Markup Language)
 
-It is a marking language similar to the HTTP headlines format.
+HELML (HEader-Like Markup Language) is a marking language similar to the HTTP headlines format.
 
-Example:
+# Descriptions
 
+[HELML format definition (en)](./README-HELML_en.md)
+
+[Описание формата HELML (ru)](./README-HELML_ru.md)
+
+
+Example (animated demo in Visual Studio Code):
+
+![Demo](https://i.imgur.com/WyGbJmO.gif)
+
+HELML-encoded Array:
 ```console
 A: 123
 B
@@ -18,7 +28,7 @@ B
 :C: 888
 D: 111
 ```
-This HELML-code is equivalent to this JSON-array:
+The same array in JSON:
 ```json
 {
     "A": "123",
@@ -35,11 +45,6 @@ This HELML-code is equivalent to this JSON-array:
 }
 ```
 
-# Descriptions
-
-[HELML format definition (en)](./README-HELML_en.md)
-
-[Описание формата HELML (ru)](./README-HELML_ru.md)
 
 
 # Implementations
@@ -56,3 +61,7 @@ This HELML-code is equivalent to this JSON-array:
 
 [JavaScript code](.JavaScript)
 
+
+### Visual Studio Code extention
+
+[VsCode ext](.helml-vscode-plugin)
