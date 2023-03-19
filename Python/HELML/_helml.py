@@ -41,6 +41,8 @@ class HELML:
 
             if isinstance(value, (list, dict, tuple)):
                 # if the value is a dictionary, call this function recursively and increase the level
+                if isinstance(value, (list, tuple)):
+                    key += ':'
                 results_arr.append(key)
                 HELML._encode(value, results_arr, val_encoder, level + 1, lvl_ch, spc_ch)
             else:
@@ -81,6 +83,9 @@ class HELML:
         result = {}
         stack = []
 
+        # array of stack stamps for delayed conversion of dict to list
+        tolist = []
+
         # Loop through each line in the input array
         for line in str_arr:
             line = line.strip()
@@ -120,9 +125,11 @@ class HELML:
                 parent = parent[parent_key]
 
             # If the value is null, start a new dictionary and add it to the parent dictionary
-            if value is None:
+            if value is None or value == '':
                 parent[key] = {}
                 stack.append(key)
+                if value == '':
+                    tolist.append(stack.copy())
             else:
                 # Decode the value if a decoder function is specified
                 if val_decoder is True:
@@ -131,6 +138,18 @@ class HELML:
                     value = val_decoder(value, spc_ch)
                 # Add the key-value pair to the current dictionary
                 parent[key] = value
+
+        # try to convert "tolist"
+        for stack in tolist:
+            parent = result
+            for parent_key in stack[:-1]:
+                parent = parent[parent_key]
+
+            last_key = stack[-1]
+            if isinstance(parent, dict) and parent.get(last_key) is not None and isinstance(parent[last_key], dict):
+                converted = [parent[last_key].get(str(i), None) for i in range(len(parent[last_key]))]
+                parent[last_key] = converted
+                
 
         # Return the result dictionary
         return result
@@ -145,10 +164,11 @@ class HELML:
                 reg_str = r"^[ -~]*$"
             else:
                 need_encode = False
-                reg_str = r"^[[:print:]]*$"
+                reg_str = r"^[ -~]*$"  # r"^[\p{Print}]*$"
+                
 
             # if need_encode or not all(c.isprintable() for c in value) or ("_" == spc_ch and "~" in value):
-            if need_encode or not re.match(reg_str, value) or ("_" == spc_ch and "~" in value):
+            if need_encode or not re.match(reg_str, value, flags=re.UNICODE) or ("_" == spc_ch and "~" in value):
                 # if the string contains special characters, encode it in base64
                 return HELML.base64url_encode(value)
             elif not value or value[0] == spc_ch or value[-1] == spc_ch or value[-1] == ' ':
