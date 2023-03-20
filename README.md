@@ -1,5 +1,5 @@
 
-![helml-logo](logo/icon.png)
+![helml-logo](https://github.com/dynoser/HELML/raw/master/logo/icon.png)
 
 # HELML (Header-Like Markup Language)
 
