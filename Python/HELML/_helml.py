@@ -1,5 +1,6 @@
 import base64
 import re
+from typing import List, Dict, Union, Callable
 
 class HELML:
 
@@ -55,7 +56,7 @@ class HELML:
                 results_arr.append(key + lvl_ch + value)
 
     @staticmethod
-    def decode(src_rows, val_decoder=True):
+    def decode(src_rows: Union[str, List[str], Dict[str, str]], val_decoder: Union[bool, Callable[[str, str], str]] = True) -> Dict:
         lvl_ch = ":"
         spc_ch = " "
         # If the input is an array, use it. Otherwise, split the input string into an array.
@@ -197,7 +198,7 @@ class HELML:
 
 
     @staticmethod
-    def valueDecoder(encoded_value, spc_ch=' '):
+    def valueDecoder(encoded_value: str, spc_ch: str = ' ') -> Union[str, int, float, bool, None]:
         fc = '' if not len(encoded_value) else encoded_value[0]
 
         if spc_ch == fc:
@@ -241,17 +242,17 @@ class HELML:
             return encoded_value
 
     @staticmethod
-    def base64url_encode(string):
+    def base64url_encode(string: str) -> str:
          enc = base64.b64encode(string.encode())
          return enc.decode().rstrip("=").translate(str.maketrans('+/', '-_'))
 
     @staticmethod
-    def base64url_decode(s):
+    def base64url_decode(s: str) -> str:
         s += "=" * (4 - len(s) % 4)
         return base64.b64decode(s.translate(str.maketrans('-_', '+/')).encode()).decode()
 
     @staticmethod
-    def is_numeric(value):
+    def is_numeric(value: str) -> bool:
         try:
             float(value)
             return True
