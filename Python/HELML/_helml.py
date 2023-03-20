@@ -6,10 +6,18 @@ class HELML:
 
     @staticmethod
     def encode(
-        arr: Union[str, list, dict, tuple],
+        arr: Union[list, dict, tuple],
         url_mode: bool = False,
         val_encoder: Union[bool, Callable[[str, str], str]] = True
     ) -> str:
+        """
+        Encode array to HELML string.
+        
+        :param arr: Input data structure (list, dict, or tuple) to be encoded.
+        :param url_mode: A boolean indicating if the URL mode should be used.
+        :param val_encoder: A function to encode values or True for default encoding.
+        :return: Encoded HELML string.
+        """
         results_arr = []
         if not isinstance(arr, (list, dict, tuple)):
             raise ValueError("List or dictionary required")
@@ -24,13 +32,23 @@ class HELML:
     
     @staticmethod
     def _encode(
-        arr: Union[list, dict, tuple],
+        arr: Union[dict, list, tuple],
         results_arr: list,
         val_encoder: Union[bool, Callable[[str, str], str]] = True,
         level: int = 0,
         lvl_ch: str = ":",
         spc_ch: str = " "
     ) -> None:
+        """
+        Encode arr to results_arr (by reference).
+        
+        :param arr: Input data structure (dict, list, or tuple) to be encoded.
+        :param results_arr: A list of strings representing the encoded data.
+        :param val_encoder: A function to encode values or True for default encoding.
+        :param level: The current level of nesting.
+        :param lvl_ch: Character used for level separation.
+        :param spc_ch: Character used for space.
+        """
 
         # convert arr to dict if need
         if not isinstance(arr, dict):
@@ -74,6 +92,16 @@ class HELML:
         src_rows: Union[str, List[str], Dict[str, str]],
         val_decoder: Union[bool, Callable[[str, str], str]] = True
     ) -> Dict:
+        """
+        Decodes a HELML formatted string or list of strings into a nested dictionary.
+
+        Args:
+            src_rows: The HELML input as a string or strings-array.
+            val_decoder: The custom value decoder function. For default encoder set True.
+
+        Returns:
+            Dict: The decoded nested dictionary.
+        """
 
         lvl_ch = ":"
         spc_ch = " "
@@ -85,15 +113,14 @@ class HELML:
                 str_arr = src_rows
 
         elif isinstance(src_rows, str):
-            for exploder_ch in ["\n", "~", "\r"]:
+            for exploder_ch in ["\n", "\r", "~"]:
                 if exploder_ch in src_rows:
+                    if "~" == exploder_ch:
+                        lvl_ch = "."
+                        spc_ch = "_"
                     break
 
             str_arr = src_rows.split(exploder_ch)
-
-            if "~" == exploder_ch:
-                lvl_ch = "."
-                spc_ch = "_"
 
         else:
             raise ValueError("Array or String required")
@@ -180,6 +207,17 @@ class HELML:
         value: Union[str, int, float, bool, None],
         spc_ch: str = " "
     ) -> str:
+        """
+        Encodes a value into a HELML string.
+
+        Args:
+            value: The value to be encoded.
+            spc_ch: The space character used for encoding. Default " ".
+
+        Returns:
+            str: The encoded HELML string.
+        """
+
         value_type = type(value).__name__
         if value_type == "str":
             reg_str = r"^[ -~]*$"
@@ -215,9 +253,20 @@ class HELML:
 
     @staticmethod
     def valueDecoder(encoded_value: str, spc_ch: str = ' ') -> Union[str, int, float, bool, None]:
-        fc = '' if not len(encoded_value) else encoded_value[0]
+        """
+        Decodes a HELML formatted string into its original value.
 
-        if spc_ch == fc:
+        Args:
+            encoded_value (str): The HELML encoded value as a string.
+            spc_ch (str, optional): The space character used for decoding. Defaults to ' '.
+
+        Returns:
+            Union[str, int, float, bool, None]: The decoded value, which can be of type str, int, float, bool, or None.
+        """
+
+        first_char = '' if not len(encoded_value) else encoded_value[0]
+
+        if spc_ch == first_char:
             if encoded_value[:2] != spc_ch * 2:
                 # if the string starts with only one space, return the string after it
                 return encoded_value[1:]
@@ -242,9 +291,9 @@ class HELML:
                     return int(encoded_value)
 
             return encoded_value
-        elif fc == '"' or fc == "'":  # it's likely that the string is enclosed in single or double quotes
+        elif first_char == '"' or first_char == "'":  # it's likely that the string is enclosed in single or double quotes
             encoded_value = encoded_value[1:-1] # trim the presumed quotes at the edges and return the interior
-            if fc == "'":
+            if first_char == "'":
                 return encoded_value
             try:
                 return encoded_value.encode('utf-8').decode('unicode_escape')
