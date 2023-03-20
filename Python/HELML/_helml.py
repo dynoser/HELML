@@ -42,7 +42,7 @@ class HELML:
             if isinstance(value, (list, dict, tuple)):
                 # if the value is a dictionary, call this function recursively and increase the level
                 if isinstance(value, (list, tuple)):
-                    key += ':'
+                    key += lvl_ch
                 results_arr.append(key)
                 HELML._encode(value, results_arr, val_encoder, level + 1, lvl_ch, spc_ch)
             else:
@@ -139,14 +139,16 @@ class HELML:
                 # Add the key-value pair to the current dictionary
                 parent[key] = value
 
-        # try to convert "tolist"
+        # try convert nested arrays by keys-pathes from tolist
         for stack in tolist:
             parent = result
             for parent_key in stack[:-1]:
                 parent = parent[parent_key]
 
             last_key = stack[-1]
-            if isinstance(parent, dict) and parent.get(last_key) is not None and isinstance(parent[last_key], dict):
+            if isinstance(parent, list) and HELML.is_numeric(last_key) and int(last_key) < len(parent):
+                last_key = int(last_key)
+            if ((isinstance(parent, dict) and parent.get(last_key) is not None) or isinstance(last_key, int)) and isinstance(parent[last_key], dict):
                 converted = [parent[last_key].get(str(i), None) for i in range(len(parent[last_key]))]
                 parent[last_key] = converted
                 
@@ -210,6 +212,8 @@ class HELML:
                 return True
             elif encoded_value == 'F':
                 return False
+            elif encoded_value == 'NaN':
+                return float('nan')
 
             if HELML.is_numeric(encoded_value):
                 # it's probably a numeric value

@@ -1,5 +1,6 @@
 import unittest
 import subprocess
+import math
 
 import time
 import random
@@ -76,6 +77,7 @@ class TestHELML(unittest.TestCase):
             lines = f.readlines()
 
         start_time = time.time()
+
         for line in lines:
             enco_line = line.strip()
             arr = HELML.decode(enco_line)
@@ -89,9 +91,62 @@ class TestHELML(unittest.TestCase):
 
         end_time = time.time()
 
-        print("Execution time: ", end_time - start_time, " seconds, total: ", len(lines))
+        print("Execution time: ", end_time - start_time, " seconds, total: ", len(lines), "rows")
+
+    def test_main_types(self):
+        h_ml = """
+
+        # Nested structure
+        A:
+        :0:  0
+        :1:  1
+        :2:
+        ::0: In0
+        ::1:  888
+        :3: Four
+
+        # Comment
+
+        # Key in base64
+        -Qg=: B-key
+
+        # Value in base64
+        C:Qy1rZXk=
+
+        # Key and Value base64-encoded 
+        -RA:RC1rZXk
+
+        # Boolean
+        TR:  T
+        FL:  F
+
+        # Nules
+        NO:  N
+
+        """
+        decoded_data = HELML.decode(h_ml)
+        expected_data = {'A': [0, 1, ['In0', 888], 'Four'], 'B': 'B-key', 'C': 'C-key', 'D': 'D-key', 'TR': True, 'FL': False, 'NO': None}
+
+        assert decoded_data == expected_data, f"Error: decoded data {decoded_data}, expected data {expected_data}"
+
+        encoded_data = HELML.encode(decoded_data, True)
+        expected_url = 'A.~.0.__0~.1.__1~.2.~..0._In0~..1.__888~.3._Four~B._B-key~C._C-key~D._D-key~TR.__T~FL.__F~NO.__N'
+        assert encoded_data == expected_url, f"Error: URL-encoded data {encoded_data}, expected data {expected_url}"
+
+        decoded_data = HELML.decode(encoded_data)
+        assert decoded_data == expected_data, f"Error: decoded data {decoded_data}, expected data {expected_data}"
+
+    def test_nan_type(self):
+        h_ml = 'A:  NaN'
+        decoded_data = HELML.decode(h_ml)
+        expected_data = {'A': float('nan')}
+        # cannot be compared by 'assert' because NaN is not equal to itself
+        # assert decoded_data == expected_data, f"Error: decoded data {decoded_data}, expected data {expected_data}"
+        assert math.isnan(decoded_data['A']), f"Error: decoded data not is NaN"
 
 
 if __name__ == '__main__':
     t = TestHELML()
+    t.test_main_types()
+    t.test_nan_type()
     t.test_rows_decode()
