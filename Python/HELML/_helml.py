@@ -5,7 +5,11 @@ from typing import List, Dict, Union, Callable
 class HELML:
 
     @staticmethod
-    def encode(arr, url_mode=False, val_encoder=True):
+    def encode(
+        arr: Union[str, list, dict, tuple],
+        url_mode: bool = False,
+        val_encoder: Union[bool, Callable[[str, str], str]] = True
+    ) -> str:
         results_arr = []
         if not isinstance(arr, (list, dict, tuple)):
             raise ValueError("List or dictionary required")
@@ -19,7 +23,15 @@ class HELML:
         return str_imp.join(results_arr)
     
     @staticmethod
-    def _encode(arr, results_arr, val_encoder=True, level=0, lvl_ch=":", spc_ch=" "):
+    def _encode(
+        arr: Union[list, dict, tuple],
+        results_arr: list,
+        val_encoder: Union[bool, Callable[[str, str], str]] = True,
+        level: int = 0,
+        lvl_ch: str = ":",
+        spc_ch: str = " "
+    ) -> None:
+
         # convert arr to dict if need
         if not isinstance(arr, dict):
             arr = {index: value for index, value in enumerate(arr)}
@@ -29,11 +41,11 @@ class HELML:
                 key = str(key)
 
             # get first char
-            fc = key[0]
+            first_char = key[0]
             # encode key in base64url if it contains unwanted characters
-            if lvl_ch in key or "~" in key or fc == "#" or fc == spc_ch or fc == ' ':
-                fc = "-"
-            if fc == "-" or key[-1] == spc_ch or key[-1] == ' ' or not all(c.isprintable() for c in key):
+            if lvl_ch in key or "~" in key or first_char == "#" or first_char == spc_ch or first_char == ' ':
+                first_char = "-"
+            if first_char == "-" or key[-1] == spc_ch or key[-1] == ' ' or not all(c.isprintable() for c in key):
                 # add "-" to the beginning of the key to indicate it's in base64url
                 key = "-" + HELML.base64url_encode(key)
 
@@ -45,18 +57,24 @@ class HELML:
                 if isinstance(value, (list, tuple)):
                     key += lvl_ch
                 results_arr.append(key)
-                HELML._encode(value, results_arr, val_encoder, level + 1, lvl_ch, spc_ch)
+                HELML._encode(value, results_arr, val_encoder,
+                              level + 1, lvl_ch, spc_ch)
             else:
                 # if the value is not a dictionary, run it through a value encoding function, if one is specified
                 if val_encoder is True:
-                    value = HELML.valueEncoder(value, spc_ch)  # Default value encoder
+                    value = HELML.valueEncoder(
+                        value, spc_ch)  # Default value encoder
                 elif val_encoder:
                     value = val_encoder(value)
                 # add the key:value pair to the output
                 results_arr.append(key + lvl_ch + value)
 
     @staticmethod
-    def decode(src_rows: Union[str, List[str], Dict[str, str]], val_decoder: Union[bool, Callable[[str, str], str]] = True) -> Dict:
+    def decode(
+        src_rows: Union[str, List[str], Dict[str, str]],
+        val_decoder: Union[bool, Callable[[str, str], str]] = True
+    ) -> Dict:
+
         lvl_ch = ":"
         spc_ch = " "
         # If the input is an array, use it. Otherwise, split the input string into an array.
@@ -158,17 +176,18 @@ class HELML:
         return result
 
     @staticmethod
-    def valueEncoder(value, spc_ch=" "):
+    def valueEncoder(
+        value: Union[str, int, float, bool, None],
+        spc_ch: str = " "
+    ) -> str:
         value_type = type(value).__name__
         if value_type == "str":
-            if spc_ch == "_":
-                # for url-mode
+            reg_str = r"^[ -~]*$"
+            if spc_ch == "_": # for url-mode
                 need_encode = "~" in value
-                reg_str = r"^[ -~]*$"
             else:
                 need_encode = False
-                reg_str = r"^[ -~]*$"  # r"^[\p{Print}]*$"
-                
+                # reg_str = r"^[\p{Print}]*$"
 
             # if need_encode or not all(c.isprintable() for c in value) or ("_" == spc_ch and "~" in value):
             if need_encode or not re.match(reg_str, value, flags=re.UNICODE) or ("_" == spc_ch and "~" in value):
@@ -181,20 +200,17 @@ class HELML:
                 # if the value is simple, just add one space at the beginning
                 return spc_ch + value
         elif value_type == "bool":
-            return spc_ch * 2 + ("T" if value else "F")
+            value = "T" if value else "F"
         elif value_type == "NoneType":
-            return spc_ch * 2 + "N"
+            value = "N"
         elif value_type == "float":
             value = str(value)
             if value == 'nan':
                 value = 'NaN'
             elif spc_ch == "_": # for url-mode because float contain dot-inside
                 return HELML.base64url_encode(value)
-            return spc_ch * 2 + value
-        elif value_type == "int":
-            return spc_ch * 2 + str(value)
-        else:
-            raise ValueError(f"Cannot encode value of type {value_type}")
+
+        return spc_ch * 2 + str(value)
 
 
     @staticmethod
