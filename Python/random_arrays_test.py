@@ -104,6 +104,9 @@ class TestHELML(unittest.TestCase):
         ::0: In0
         ::1:  888
         :3: Four
+        
+        # Empty string
+        :4:""
 
         # Key in base64
         -Qg=: B-key
@@ -123,12 +126,12 @@ class TestHELML(unittest.TestCase):
 
         """
         decoded_data = HELML.decode(h_ml)
-        expected_data = {'A': [0, 1, ['In0', 888], 'Four'], 'B': 'B-key', 'C': 'C-key', 'D': 'D-key', 'TR': True, 'FL': False, 'NO': None}
+        expected_data = {'A': [0, 1, ['In0', 888], 'Four', ''], 'B': 'B-key', 'C': 'C-key', 'D': 'D-key', 'TR': True, 'FL': False, 'NO': None}
 
         assert decoded_data == expected_data, f"Error: decoded data {decoded_data}, expected data {expected_data}"
 
         encoded_data = HELML.encode(decoded_data, True)
-        expected_url = 'A.~.0.__0~.1.__1~.2.~..0._In0~..1.__888~.3._Four~B._B-key~C._C-key~D._D-key~TR.__T~FL.__F~NO.__N'
+        expected_url = "A.~.0.__0~.1.__1~.2.~..0._In0~..1.__888~.3._Four~.4.''~B._B-key~C._C-key~D._D-key~TR.__T~FL.__F~NO.__N"
         assert encoded_data == expected_url, f"Error: URL-encoded data {encoded_data}, expected data {expected_url}"
 
         decoded_data = HELML.decode(encoded_data)
