@@ -1,4 +1,6 @@
 <?php
+namespace dynoser\HELML;
+
 if (!isset($argv[1])) {
   echo "Please provide a string to encode\n";
   exit(1);

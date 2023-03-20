@@ -1,4 +1,5 @@
 <?php
+namespace dynoser\HELML;
 /*
  * This code represents a PHP implementation of the HELML class without dependencies.
  * 
@@ -75,6 +76,9 @@ class HELML {
             $key = str_repeat($lvl_ch, $level) . $key;
 
             if (is_array($value)) {
+                if (self::isArrayList($value)) {
+                    $key .= ':';
+                }
                 // If the value is an array, call this function recursively and increase the level
                 $results_arr[] = $key;
                 self::_encode($value, $results_arr, $level + 1, $lvl_ch, $spc_ch);
@@ -273,6 +277,20 @@ class HELML {
             return $encodedValue; // Fallback if can't decode
         }
         return $decoded;
+    }
+    
+    public static function isArrayList(&$arr, $expected_count = false)
+    {
+        if (!array_key_exists(0, $arr))
+            return false;
+        $el_count = count($arr);
+        if ($expected_count && ($el_count != $expected_count))
+            return false;
+        for($i = 1; $i < $el_count; $i++) {
+            if (!array_key_exists($i, $arr))
+                return false;
+        }
+        return true;
     }
     
     /**

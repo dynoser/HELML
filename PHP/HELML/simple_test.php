@@ -1,6 +1,23 @@
 <?php
+use dynoser\HELML\HELML;
 
 require_once 'src/HELML.php';
+
+$a = [
+    'A' => [2 => 2, 0 => 3],
+    'B' => [1,2,3]
+    ];
+
+$data = [
+    "key1" => "value1",
+    "key2" => [1, 2, 3],
+    "key3" => [
+        "nested_key" => "nested_value"
+    ]
+];
+
+print_r(HELML::encode($data));
+
 
 HELML::$CUSTOM_FORMAT_DECODER = function($value) {
     if (substr($value, 0, 1) === 'T') {
