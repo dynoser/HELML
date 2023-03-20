@@ -82,11 +82,11 @@ class TestHELML(unittest.TestCase):
             enco_line = line.strip()
             arr = HELML.decode(enco_line)
             self.assertIsInstance(arr, dict)
+
+            # encode to url-mode and decode back
             row = HELML.encode(arr, True)
-            #row = row.encode('utf-8').strip()
             a2 = HELML.decode(row)
-            if not a2 == arr:
-                print("ERR")
+            assert a2 == arr, "Different decode results"
 
 
         end_time = time.time()
@@ -104,8 +104,6 @@ class TestHELML(unittest.TestCase):
         ::0: In0
         ::1:  888
         :3: Four
-
-        # Comment
 
         # Key in base64
         -Qg=: B-key
