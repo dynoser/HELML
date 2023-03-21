@@ -20,9 +20,11 @@ var pythonarr = function(data, indentLevel = 0) {
       return 'float("inf")';
     } else if (data === -Infinity) {
       return 'float("-inf")';
+    } else if (data === null) {
+      return 'None';
     }
   
-    // number, strinf, boolean, null
+    // number, string, boolean
     return JSON.stringify(data);
   }
 

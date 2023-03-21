@@ -4,6 +4,13 @@ All notable changes to the "helml" extension will be documented in this file.
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [0.0.3]
+
+ - Added convertation HELML to JavaScript code (HELML toJavaScript)
+ - Added convertation HELML to PHP code (HELML toPHP)
+ - Added convertation HELML to Python code (HELML toPython)
+
+
 ## [0.0.2]
 
  - Added types Infinity (INF) and -Infinity (NIF)

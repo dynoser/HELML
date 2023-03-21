@@ -2,7 +2,7 @@
   "name": "helmlext",
   "displayName": "helmlext",
   "description": "Plugin to encode/decode HELML data",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "publisher": "dynoser",
   "license": "MIT",
   "repository": {
