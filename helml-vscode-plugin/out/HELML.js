@@ -4,7 +4,7 @@ class HELML {
         'U': undefined,
         'T': true,
         'F': false,
-        'NaN': NaN,
+        'NAN': NaN,
         'INF': Infinity,
         'NIF': -Infinity
     };
@@ -187,7 +187,7 @@ class HELML {
                 } else if (value === -Infinity) {
                     value = "NIF";
                 } else if (Number.isNaN(value)) {
-                    value = "NaN";
+                    value = "NAN";
                 } else if ('_' === spc_ch && !Number.isInteger(value)) {
                     // for url-mode because dot-inside
                     return HELML.base64Uencode(value);

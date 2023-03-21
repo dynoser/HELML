@@ -30,7 +30,19 @@
 			{
 				"command": "helml.fromJSON",
 				"title": "HELML fromJSON"
-			}
+			},
+      {
+        "command": "helml.toJavaScript",
+        "title": "HELML toJavaScript"
+      },
+      {
+        "command": "helml.toPHP",
+        "title": "HELML toPHP"
+      },
+      {
+        "command": "helml.toPython",
+        "title": "HELML toPython"
+      }
     ]
   },
   "scripts": {
