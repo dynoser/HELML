@@ -1,7 +1,7 @@
 {
     "name": "dynoser/helml",
     "description": "PHP implementation of the HELML class without dependencies",
-    "keywords": ["array", "serialize", "serialization", "JSON", "YAML"],
+    "keywords": ["array", "serialize", "serialization", "JSON", "YAML", "HELML"],
     "license": "Apache-2.0",
     "authors": [
         {
