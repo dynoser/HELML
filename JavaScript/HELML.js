@@ -1,5 +1,19 @@
-export default class HELML {
-    static encode(arr, url_mode = false, val_encoder = true) {
+class HELML {
+    static SPEC_TYPE_VALUES = {
+        'N': null,
+        'U': undefined,
+        'T': true,
+        'F': false,
+        'NAN': NaN,
+        'INF': Infinity,
+        'NIF': -Infinity
+    };
+
+    static CUSTOM_FORMAT_DECODER = null;
+    static CUSTOM_VALUE_ENCODER = null;
+    static CUSTOM_VALUE_DECODER = null;
+
+    static encode(arr, url_mode = false) {
         let results_arr = [];
 
         // Check arr and convert to iterable (if possible)
@@ -8,11 +22,15 @@ export default class HELML {
         let str_imp = url_mode ? "~" : "\n";
         let lvl_ch = url_mode ? '.' : ':';
         let spc_ch = url_mode ? '_' : ' ';
-        HELML._encode(arr, results_arr, val_encoder, 0, lvl_ch, spc_ch);
+        HELML._encode(arr, results_arr, 0, lvl_ch, spc_ch);
         return results_arr.join(str_imp);
     }
 
-    static _encode(arr, results_arr, val_encoder = true, level = 0, lvl_ch = ":", spc_ch = " ") {
+    static _encode(arr, results_arr, level = 0, lvl_ch = ":", spc_ch = " ") {
+
+        // Set value encoder function as default valueEncoder or custom user function
+        const valueEncoFun = HELML.CUSTOM_VALUE_ENCODER === null ? HELML.valueEncoder : HELML.CUSTOM_VALUE_ENCODER;
+
         for (let key in arr) {
             let value = arr[key];
     
@@ -30,25 +48,24 @@ export default class HELML {
             // add the appropriate number of colons to the left of the key, based on the current level
             key = lvl_ch.repeat(level) + key;
     
-            if (Array.isArray(value) || typeof value === 'object') {
+            if (value !== null && (Array.isArray(value) || typeof value === 'object' )) {
                 // if the value is an array or iterable, call this function recursively and increase the level
                 results_arr.push(Array.isArray(value) ? key + ":" : key);
                 value = HELML.iterablize(value);
-                HELML._encode(value, results_arr, val_encoder, level + 1, lvl_ch, spc_ch);
+                HELML._encode(value, results_arr, level + 1, lvl_ch, spc_ch);
             } else {
-                // if the value is not an array, run it through a value encoding function, if one is specified
-                if (val_encoder === true) {
-                    value = HELML.valueEncoder(value, spc_ch); // Default value encoder
-                } else if (val_encoder) {
-                    value = val_encoder(value);
-                }
+                // if the value is not an array, run it through a value encoding function
+                value = valueEncoFun(value, spc_ch);
                 // add the key:value pair to the output
                 results_arr.push(key + lvl_ch + value);
             }
         }
     }
     
-    static decode(src_rows, val_decoder = true) {
+    static decode(src_rows) {
+        // Set value decoder function as default valueDecoder or custom user function
+        const valueDecoFun = HELML.CUSTOM_VALUE_DECODER === null ? HELML.valueDecoder : HELML.CUSTOM_VALUE_DECODER;
+
         // If the input is an array, use it. Otherwise, split the input string into an array.
         let str_arr;
         let lvl_ch = ':';
@@ -68,7 +85,7 @@ export default class HELML {
             }
         } else {
             try {
-                str_arr = Array.from(arr);
+                str_arr = Array.from(src_rows);
             } catch (e) {
                 throw new Error("Iterable object or String required");
             }
@@ -99,7 +116,7 @@ export default class HELML {
             const firstDiv = line.indexOf(lvl_ch);
             let key = firstDiv === -1 ? line : line.substring(0, firstDiv);
             let value = firstDiv === -1 ? null : line.substring(firstDiv + 1);            
-     
+    
             // Decode the key if it starts with an equals sign
             if (typeof key === "string" && key.charAt(0) === '-') {
                 key = HELML.base64Udecode(key.substring(1));
@@ -124,12 +141,8 @@ export default class HELML {
                 parent[key] = value === '' ? [] : {};
                 stack.push(key);
             } else {
-                // Decode the value if a decoder function is specified
-                if (val_decoder === true) {
-                    value = HELML.valueDecoder(value, spc_ch);
-                } else if (val_decoder) {
-                    value = val_decoder(value, spc_ch);
-                }
+                // Decode the value by current decoder function
+                value = valueDecoFun(value, spc_ch);
                 // Add the key-value pair to the current array
                 parent[key] = value;
             }
@@ -165,22 +178,32 @@ export default class HELML {
                     return spc_ch + value;
                 }
             case 'boolean':
-                return spc_ch + spc_ch + (value ? 'T' : 'F');
+                value = (value ? 'T' : 'F'); break;
             case 'undefined':
-                return spc_ch + spc_ch + 'U';
-            case 'null':
-                return spc_ch + spc_ch + 'N';
+                value = 'U'; break;
             case 'number':
-                if ('_' === spc_ch) {
+                if (value === Infinity) {
+                    value = "INF";
+                } else if (value === -Infinity) {
+                    value = "NIF";
+                } else if (Number.isNaN(value)) {
+                    value = "NAN";
+                } else if ('_' === spc_ch && !Number.isInteger(value)) {
                     // for url-mode because dot-inside
                     return HELML.base64Uencode(value);
                 }
-                // if not url mode, go below
+                /* falls through */
             case 'bigint':
-                return spc_ch + spc_ch + value;
+                break;
+            case 'null': // type of "null" is "object"
+            case 'object':
+                if (value === null) {
+                   value = 'N'; break;
+                }
             default:
-                throw new Error("Cannot encode value of type ${type}");
+                throw new Error(`Cannot encode value of type ${type}`);
         }
+        return spc_ch + spc_ch + value;
     }
         
     static valueDecoder(encodedValue, spc_ch = ' ') {
@@ -192,16 +215,8 @@ export default class HELML {
             }
             // if the string starts with two spaces, then it encodes a non-string value
             encodedValue = encodedValue.slice(2); // strip left spaces
-            if (encodedValue === 'N') {
-                return null;
-            } else if (encodedValue === 'T') {
-                return true;
-            } else if (encodedValue === 'F') {
-                return false;
-            } else if (encodedValue === 'NaN') {
-                return NaN;
-            } else if (encodedValue === 'U') {
-                return undefined;
+            if (encodedValue in HELML.SPEC_TYPE_VALUES) {
+                return HELML.SPEC_TYPE_VALUES[encodedValue];
             }
             if (/^-?\d+(.\d+)?$/.test(encodedValue)) {
                 // it's probably a numeric value
@@ -213,7 +228,10 @@ export default class HELML {
                     return parseInt(encodedValue, 10);
                 }
             }
-            // other encoding options are not currently supported
+            // custom user-defined function
+            if (typeof HELML.CUSTOM_FORMAT_DECODER === 'function') {
+                return HELML.CUSTOM_FORMAT_DECODER(encodedValue, spc_ch);
+            }
             return encodedValue;
         } else if ('"' === fc || "'" === fc) { // it's likely that the string is enclosed in single or double quotes
             return encodedValue.slice(1, -1); // trim the presumed quotes at the edges and return the interior
@@ -221,7 +239,7 @@ export default class HELML {
         // if there are no spaces or quotes at the beginning, the value should be in base64
         return HELML.base64Udecode(encodedValue);
     }
-        
+
     static base64Uencode(str) {
         let base64;
     
@@ -237,7 +255,7 @@ export default class HELML {
     
         return base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
     }
-
+            
     static base64Udecode(str) {
         str = str.replace(/-/g, '+').replace(/_/g, '/');
         while (str.length % 4) {
@@ -278,3 +296,5 @@ export default class HELML {
     }
     
 }    
+
+module.exports = HELML;

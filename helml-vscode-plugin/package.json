@@ -17,8 +17,11 @@
   ],
 	"icon": "images/icon.png",
 	"activationEvents": [
+		"onCommand:helmlext.fromJSON",
 		"onCommand:helmlext.toJSON",
-		"onCommand:helmlext.fromJSON"
+    "onCommand:helmlext.toJavaScript",
+    "onCommand:helmlext.toPHP",
+    "onCommand:helmlext.toPython"
 	],
 	"main": "./out/extension.js",
   "contributes": {
