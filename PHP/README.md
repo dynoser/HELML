@@ -14,14 +14,14 @@ This can be used for cross-platform data transfer, configuration files, data ser
 - See also: [HELML on JavaScript](https://github.com/dynoser/HELML/blob/master/JavaScript)
 - See also: [HELML Visual Studio Code plugin](https://github.com/dynoser/HELML/blob/master/helml-vscode-plugin)
 
-# Installation
+# Installation (PHP)
 To install phpHELML, simply use composer:
 
 ```bash
 composer require dynoser/helml
 ```
 
-# Usage
+# Usage (PHP)
 
 Here's a quick example of how to use the HELML library:
 
