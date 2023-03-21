@@ -1,4 +1,4 @@
-# HELML
+# phpHELML
 
 ![helml-logo](https://github.com/dynoser/HELML/raw/master/logo/icon.png)
 
@@ -9,11 +9,13 @@ HELML is a Human-Editable List Markup Language, or HEader-Like Markup Language
 This is a PHP library that provides an easy way to encode and decode array data structures into human-readable and editable strings.
 This can be used for cross-platform data transfer, configuration files, data serialization, and other purposes.
 
-See more: [HELML format definition](https://github.com/dynoser/HELML/blob/master/README-HELML_en.md)
-
+- More: [HELML format definition](https://github.com/dynoser/HELML/blob/master/README-HELML_en.md)
+- See also: [HELML on Python](https://github.com/dynoser/HELML/blob/master/Python)
+- See also: [HELML on JavaScript](https://github.com/dynoser/HELML/blob/master/JavaScript)
+- See also: [HELML Visual Studio Code plugin](https://github.com/dynoser/HELML/blob/master/helml-vscode-plugin)
 
 # Installation
-To install HELML, simply use composer:
+To install phpHELML, simply use composer:
 
 ```bash
 composer require dynoser/helml
