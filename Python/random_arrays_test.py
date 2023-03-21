@@ -3,6 +3,7 @@ import subprocess
 import math
 
 import time
+import datetime
 import random
 import string
 from typing import Any, Dict, List, Union
@@ -47,6 +48,17 @@ def generate_nested_dict(depth: int = 3, size: int = 5) -> Dict[str, Any]:
         return {random_string(random.randint(1, 10)): random_value() for _ in range(size)}
     else:
         return {random_string(random.randint(3, 5)): (generate_nested_dict(depth - 1, size) if random.random() < 0.5 else random_value()) for _ in range(size)}
+
+def custom_decoder_function(value: str, spc_ch: str) -> str:
+    if value.startswith("T"):
+        try:
+            timestamp = float(value[1:])
+            dt = datetime.datetime.fromtimestamp(timestamp)
+            return dt.strftime("%Y-%m-%d %H:%M:%S")
+        except ValueError:
+            pass
+    
+    return value
 
 class TestHELML(unittest.TestCase):
     def test_encode_decode_url_mode(self):
@@ -138,16 +150,43 @@ class TestHELML(unittest.TestCase):
         assert decoded_data == expected_data, f"Error: decoded data {decoded_data}, expected data {expected_data}"
 
     def test_nan_type(self):
-        h_ml = 'A:  NaN'
+        h_ml = 'A:  NAN'
         decoded_data = HELML.decode(h_ml)
         expected_data = {'A': float('nan')}
         # cannot be compared by 'assert' because NaN is not equal to itself
         # assert decoded_data == expected_data, f"Error: decoded data {decoded_data}, expected data {expected_data}"
         assert math.isnan(decoded_data['A']), f"Error: decoded data not is NaN"
 
+    def test_special_types(self):
+        h_ml = """
+            A:  INF
+            B:  NIF
+            C:  N
+            D:  T
+            F:  F
+            """
+        decoded_data = HELML.decode(h_ml)
+        expected_data = {
+            "A": float("inf"),
+            "B": float("-inf"),
+            "C": None,
+            "D": True,
+            "F": False
+        }
+        assert decoded_data == expected_data, f"Error: decoded data {decoded_data}, expected data {expected_data}"
+
+
+    def test_custom_decoder(self):
+        HELML.CUSTOM_FORMAT_DECODER = custom_decoder_function
+        h_ml = 'A:  T1635600000'
+        decoded_data = HELML.decode(h_ml)
+        expected_data = {"A": "2021-10-30 16:20:00"}
+        assert decoded_data == expected_data, f"Error: decoded data {decoded_data}, expected data {expected_data}"
+
 
 if __name__ == '__main__':
     t = TestHELML()
     t.test_main_types()
+    t.test_special_types()
     t.test_nan_type()
     t.test_rows_decode()

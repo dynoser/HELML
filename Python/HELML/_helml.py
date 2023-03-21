@@ -4,11 +4,24 @@ from typing import List, Dict, Union, Callable
 
 class HELML:
 
+    SPEC_TYPE_VALUES = {
+        'N': None,
+        'U': None,
+        'T': True,
+        'F': False,
+        'NAN': float('nan'),
+        'INF': float('inf'),
+        'NIF': float('-inf')
+    }
+
+    CUSTOM_FORMAT_DECODER = None
+    CUSTOM_VALUE_ENCODER = None
+    CUSTOM_VALUE_DECODER = None
+
     @staticmethod
     def encode(
         arr: Union[list, dict, tuple],
-        url_mode: bool = False,
-        val_encoder: Union[bool, Callable[[str, str], str]] = True
+        url_mode: bool = False
     ) -> str:
         """
         Encode array to HELML string.
@@ -26,7 +39,7 @@ class HELML:
         lvl_ch = "." if url_mode else ":"
         spc_ch = "_" if url_mode else " "
 
-        HELML._encode(arr, results_arr, val_encoder, 0, lvl_ch, spc_ch)
+        HELML._encode(arr, results_arr, 0, lvl_ch, spc_ch)
 
         return str_imp.join(results_arr)
     
@@ -34,7 +47,6 @@ class HELML:
     def _encode(
         arr: Union[dict, list, tuple],
         results_arr: list,
-        val_encoder: Union[bool, Callable[[str, str], str]] = True,
         level: int = 0,
         lvl_ch: str = ":",
         spc_ch: str = " "
@@ -49,6 +61,9 @@ class HELML:
         :param lvl_ch: Character used for level separation.
         :param spc_ch: Character used for space.
         """
+
+        # select value-encoder function: custom or internal default
+        value_enco_fun = HELML.CUSTOM_VALUE_ENCODER if HELML.CUSTOM_VALUE_ENCODER is not None else HELML.valueEncoder
 
         # convert arr to dict if need
         if not isinstance(arr, dict):
@@ -75,22 +90,17 @@ class HELML:
                 if isinstance(value, (list, tuple)):
                     key += lvl_ch
                 results_arr.append(key)
-                HELML._encode(value, results_arr, val_encoder,
-                              level + 1, lvl_ch, spc_ch)
+                HELML._encode(value, results_arr, level + 1, lvl_ch, spc_ch)
             else:
-                # if the value is not a dictionary, run it through a value encoding function, if one is specified
-                if val_encoder is True:
-                    value = HELML.valueEncoder(
-                        value, spc_ch)  # Default value encoder
-                elif val_encoder:
-                    value = val_encoder(value)
+                # use selected value encoder function
+                value = value_enco_fun(value, spc_ch)
+
                 # add the key:value pair to the output
                 results_arr.append(key + lvl_ch + value)
 
     @staticmethod
     def decode(
-        src_rows: Union[str, List[str], Dict[str, str]],
-        val_decoder: Union[bool, Callable[[str, str], str]] = True
+        src_rows: Union[str, List[str], Dict[str, str]]
     ) -> Dict:
         """
         Decodes a HELML formatted string or list of strings into a nested dictionary.
@@ -102,6 +112,9 @@ class HELML:
         Returns:
             Dict: The decoded nested dictionary.
         """
+
+        # select value decoder function custom or internal default
+        value_deco_fun = HELML.CUSTOM_VALUE_DECODER if HELML.CUSTOM_VALUE_DECODER is not None else HELML.valueDecoder
 
         lvl_ch = ":"
         spc_ch = " "
@@ -177,11 +190,8 @@ class HELML:
                 if value == '':
                     tolist.append(stack.copy())
             else:
-                # Decode the value if a decoder function is specified
-                if val_decoder is True:
-                    value = HELML.valueDecoder(value, spc_ch)
-                elif val_decoder:
-                    value = val_decoder(value, spc_ch)
+                # Decode the value by selected value-decoder-function
+                value = value_deco_fun(value, spc_ch)
                 # Add the key-value pair to the current dictionary
                 parent[key] = value
 
@@ -245,6 +255,10 @@ class HELML:
             value = str(value)
             if value == 'nan':
                 value = 'NAN'
+            elif value == 'inf':
+                value = 'INF'
+            elif value == '-inf':
+                value = 'NIF'
             elif spc_ch == "_": # for url-mode because float contain dot-inside
                 return HELML.base64url_encode(value)
 
@@ -272,14 +286,8 @@ class HELML:
                 return encoded_value[1:]
             # if the string starts with two spaces, then it encodes a non-string value
             encoded_value = encoded_value[2:]  # strip left spaces
-            if encoded_value == 'N':
-                return None
-            elif encoded_value == 'T':
-                return True
-            elif encoded_value == 'F':
-                return False
-            elif encoded_value == 'NAN':
-                return float('nan')
+            if encoded_value in HELML.SPEC_TYPE_VALUES:
+                return HELML.SPEC_TYPE_VALUES[encoded_value]
 
             if HELML.is_numeric(encoded_value):
                 # it's probably a numeric value
@@ -289,6 +297,9 @@ class HELML:
                 else:
                     # if there's no decimal point, it's an integer
                     return int(encoded_value)
+
+            if HELML.CUSTOM_FORMAT_DECODER is not None:
+                encoded_value = HELML.CUSTOM_FORMAT_DECODER(encoded_value, spc_ch)
 
             return encoded_value
         elif first_char == '"' or first_char == "'":  # it's likely that the string is enclosed in single or double quotes

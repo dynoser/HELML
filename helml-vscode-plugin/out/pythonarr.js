@@ -22,6 +22,10 @@ var pythonarr = function(data, indentLevel = 0) {
       return 'float("-inf")';
     } else if (data === null) {
       return 'None';
+    } else if (data === true) {
+      return 'True';
+    } else if (data === false) {
+      return 'False';
     }
   
     // number, string, boolean
