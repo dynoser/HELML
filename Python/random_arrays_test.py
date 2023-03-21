@@ -14,8 +14,8 @@ def random_string_ascii(length: int) -> str:
 
 def random_string_utf(length: int) -> str:
     characters = string.ascii_letters + string.digits + string.punctuation + " "
-    characters += ''.join([chr(i) for i in range(0x4E00, 0x9FBF)]) # добавляем китайские символы
-    characters += ''.join([chr(i) for i in range(0x0400, 0x04FF)]) # добавляем русские символы
+    characters += ''.join([chr(i) for i in range(0x4E00, 0x9FBF)]) # add chinese
+    characters += ''.join([chr(i) for i in range(0x0400, 0x04FF)]) # add russian
     return ''.join(random.choices(characters, k=length))
 
 def random_string(length: int) -> str:
@@ -50,24 +50,24 @@ def generate_nested_dict(depth: int = 3, size: int = 5) -> Dict[str, Any]:
 
 class TestHELML(unittest.TestCase):
     def test_encode_decode_url_mode(self):
-        for _ in range(50):  # количество случайных тестов
+        for _ in range(50):
             original_data = generate_nested_dict()
             encoded_data = HELML.encode(original_data, True)
             decoded_data = HELML.decode(encoded_data)
             assert decoded_data == original_data, f"Error: source data {original_data}, after encode-decode {decoded_data}"
 
     def test_encode_decode_lines_mode(self):
-        for _ in range(50):  # количество случайных тестов
+        for _ in range(50):
             original_data = generate_nested_dict()
             encoded_data = HELML.encode(original_data, False)
             decoded_data = HELML.decode(encoded_data)
             assert decoded_data == original_data, f"Error: source data {original_data}, after encode-decode {decoded_data}"
 
     def test_console_php_subprocess(self):
-        for _ in range(100):  # количество случайных тестов
+        for _ in range(100):
             original_data = generate_nested_dict()
             encoded_data = HELML.encode(original_data, True)
-            result = subprocess.run(['php', 'PHP/HELML/console_test.php', encoded_data], stdout=subprocess.PIPE)
+            result = subprocess.run(['php', 'PHP/console_test.php', encoded_data], stdout=subprocess.PIPE)
             encoded_data = result.stdout.decode('utf-8').strip()
             decoded_data = HELML.decode(encoded_data)
             assert decoded_data == original_data, f"Error: source data {original_data}, after encode-decode {decoded_data}"
