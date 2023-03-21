@@ -1,7 +1,8 @@
 # HELML
 
-![helml-logo](logo/icon.png)
 ## HELML (Header-Like Markup Language)
+
+![helml-logo](logo/icon.png)
 
 HELML (HEader-Like Markup Language) is a marking language similar to the HTTP headlines format.
 
@@ -37,6 +38,7 @@ If you decode this text through HELML.decode, you get an array `[key] => 'Value'
     You can comment out some lines at the beginning of the line.
 
 
+
 # Nested arrays
 
 ## The HELML format supports any array-structure, with no restrictions on nesting levels.
@@ -45,16 +47,16 @@ If you decode this text through HELML.decode, you get an array `[key] => 'Value'
 
 This is a key point, consider it more details. Let's start with an example.
 
-Encode this array in HELML:
-```console
-[
-    'Host' => 'github.com',
-    'Names' => [
-        'no_www' => 'github.com',
-        'www' => 'www.github.com
-    ],
-    'Test' => 'The test'
-]
+Encode to HELML from this JSON-array:
+```json
+{
+	"Host": "github.com",
+	"Names": {
+		"no_www": "github.com",
+		"www": "www.github.com"
+	},
+	"Test": "The test"
+}
 ```
 Result:
 ```console
@@ -85,21 +87,21 @@ If there are no "**level colons**" at the beginning of the line, then they are p
 
 ## Another example.Deeper nesting
 
-We encode such an array in HELML:
-```console
-[
-    'A' => 123,
-    'B' => [
-        'X' => 456,
-        'Y' => 789,
-        'Z' => [
-            'One' => 1,
-            'Two' => 2
-        ]
-        'C' => 888
-    ],
-    'D' => 111
-]
+Encode this JSON to HELML:
+```json
+{
+	"A": "123",
+	"B": {
+		"X": "456",
+		"Y": "789",
+		"Z": {
+			"One": "1",
+			"Two": "2"
+		},
+		"C": "888"
+	},
+	"D": "111"
+}
 ```
 
 Result:
@@ -115,9 +117,9 @@ B
 D: 111
 ```
 
-# Some nuances of nesting control
+# Explicit creation of sub-arrays
 
-You may have questions: what will happen if you write, for example, like this:
+You might have a question: what will happen if you write, for example, like this:
 
 ```console
 A:123
@@ -125,10 +127,19 @@ A:123
 ::C:789
 ```
 - Question: Where will B and C go?
-- Answer: They will go to the same place as A, that is, to the root level of the array.
+- Answer: They will end up in the same place as A, i.e., at the root level of the array.
+
+The result in this example will be:
+```json
+{
+	"A": "123",
+	"B": "456",
+	"C": "789"
+}
+```
 - Why?
 >
-     Because in this example there is no creation of sub-arrays.
+     Because in this example, there is no creation of keys for sub-arrays.
      Increasing the number of "level colons" does not create sub-arrays.
      The creation of sub-arrays must be explicit.
      In other words, if the number of "level colons" is greater than
@@ -142,7 +153,59 @@ A:123
      then we return back to the level that will correspond to them.
 
 
-Above, we have described everything related to managing the nesting structure of arrays.
+# Two kinds of nested arrays
+
+*(this feature is optional and not needed in all programming languages)*
+
+In some programming languages, as well as in the JSON format, there are two types of arrays:
+
+ 1) some are written in the format `{ key: value, key: value, ... }`
+ 2) others - "lists", are written in the format `[ value, value, value ... ]`
+
+The second option, usually written in square brackets, differs from the first in that
+the "keys" are assumed to be numeric (from 0 and up), and therefore they are not explicitly specified.
+
+In the HELML format, keys are always explicitly specified.
+
+However, to preserve typing, HELML allows distinguishing lists of the form [...] from arrays of the form {...}.
+To do this, when creating a key for a nested array, a colon is added to its name.
+
+For example, let's convert this JSON to HELML:
+```json
+{ "List": ["A","B","C"] }
+```
+In HELML, this will have a colon after "List":
+```console
+List:
+:0: A
+:1: B
+:2: C
+```
+
+If you remove this colon, it will correspond to an array in curly brackets:
+```json
+{ "List": {"0": "A", "1": "B", "2": "C"} }
+```
+
+Thus, in HELML, explicit creation of a key for a nested array has two ways of writing:
+
+    1) writing without a "separating colon" creates arrays "in curly brackets".
+    2) writing with a "separating colon" and an empty "value" creates arrays "in square brackets".
+
+# Summary of the structure
+
+We have described everything related to managing the structure of nested arrays above.
+
+For compatibility with JSON and the typing of some programming languages,
+
+Two types of nested arrays are supported: "lists" `[...]` and "dictionaries" `{...}`.
+
+The root level is always assumed to be in the "dictionary" format `{...}`.
+
+In most cases, this difference between the two types of nested arrays can be ignored.
+
+These capabilities are more than enough to create transportable data
+for the purpose of transferring complexly structured arrays between different programming languages.
 
 Now let's move on to considering the encoding of values.
 
@@ -157,8 +220,6 @@ Now let's move on to considering the encoding of values.
 
      Special cases are when the value is special (for example, binary), or when it is important to specify its type.
 
-     For example, if the value starts with a space, contains non-printable characters, and so on.
-
 - the value can always be represented in Base64 encoding (as well as Base64url)
 
 >
@@ -169,26 +230,33 @@ Now let's move on to considering the encoding of values.
      A:IFRlc3Q=
      # in this case "IFRlc3Q=" is the Base64 encoded string "Test" and there is no space.
 
-! The number of spaces after the "breaking colon" is important,
-   it indicates special cases of value encoding.
+! The number of spaces after the "splitting colon" is important,
+as it indicates special cases of value encoding.
 
-- If there is a single space between the "breaking colon" and the value, it is a "simple case".
-- If there is no space, or there are two or more spaces, these are "special cases".
+- If there is one space between the "splitting colon" and the value, it is a "simple case".
+- If there is no space or two or more spaces, it is a "special case".
 - If there is no space, then:
-   - if the value starts with double or single quotes, these are "quote cases".
-     - if the quotes are single, then the value inside them is returned, and the quotes are discarded.
-     - if the quotes are double, then the value is returned with parsing of special characters (such as `"\n"`)
-   - if these are not quotes, then the value is assumed to be encoded in Base64 (or Base64url)
-     - if this value is successfully decoded from Base64, the decoded value will be returned.
-     - if it fails to decode, the value will be returned as is (not recommended scenario!)
-- If there are two spaces, then this applies to cases of strong typing:
-   - if two spaces are followed by a number, then it will be represented as a number, not as a string.
-     - if the number contains a dot, it will be represented as a float
-     - if the number does not contain a dot, it will be represented as an integer
-   - if after two spaces follows:
-     - T - will be represented as a boolean value True
-     - F - will be represented as a boolean value False
-     - N - will be represented as "absence" NULL, or None, depending on the language of the result
+  -  if the value starts with double or single quotes, it is a "quotation case".
+     - if the quotes are single, the value within them is returned, and the quotes are discarded.
+     - if the quotes are double, the value is returned with special character parsing (such as "\n")
+  - if it is not a quotation, the value is assumed to be encoded in Base64 (or Base64url)
+    - if the value is successfully decoded from Base64, the decoded value is returned.
+    - if it cannot be decoded, the value is returned as is (not a recommended scenario!)
+- If there are two spaces, it concerns cases of strict typing:
+  - if a number follows the two spaces, it will be represented as a number, not as a string.
+    - if the number contains a dot, it will be represented as a float (double)
+    - if the number does not contain a dot, it will be represented as an integer
+  - if after the two spaces:
+    - T - will be represented as a boolean value True
+    - F - will be represented as a boolean value False
+    - N - will be represented as "absence" NULL, or None, depending on the language of the result
+    - NAN - will be represented as a numeric value NaN (Not-A-Number)
+    - INF - will be represented as a numeric value Infinity
+    - NIF - will be represented as a numeric value -Infinity
+    - U - will be represented as "undefined" in JavaScript, or similar to N in other languages
+  - if the value after the two spaces does not match the options described above, then:
+    - a custom handler CUSTOM_FORMAT_DECODER can be set for such values
+    - if the custom decoder is not set, the value will be returned "as is" (without the two spaces)
 
 >
      For example, depending on the number of spaces, 123 will be represented as a number, or as a string:
@@ -249,9 +317,9 @@ The old value is completely forgotten and replaced with the new one.
 For example, this code first specifies the array A, and then replaces it with the string value "Three".
 ```console
 A
-:1:One
-:2:Two
-A:Three
+:1: One
+:2: Two
+A: Three
 ```
 It is assumed that repeated keys are the result of manual editing.
 Either this is a bug, or this is to undo the data above instead of commenting it out.
