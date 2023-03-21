@@ -244,7 +244,7 @@ class HELML:
         elif value_type == "float":
             value = str(value)
             if value == 'nan':
-                value = 'NaN'
+                value = 'NAN'
             elif spc_ch == "_": # for url-mode because float contain dot-inside
                 return HELML.base64url_encode(value)
 
@@ -278,7 +278,7 @@ class HELML:
                 return True
             elif encoded_value == 'F':
                 return False
-            elif encoded_value == 'NaN':
+            elif encoded_value == 'NAN':
                 return float('nan')
 
             if HELML.is_numeric(encoded_value):
