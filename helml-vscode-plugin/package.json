@@ -2,12 +2,12 @@
   "name": "helmlext",
   "displayName": "helmlext",
   "description": "Plugin to encode/decode HELML data",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "publisher": "dynoser",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/dynoser/HELML/helml-vscode-plugin"
+    "url": "https://github.com/dynoser/HELML/tree/master/helml-vscode-plugin"
   },
   "engines": {
     "vscode": "^1.65.0"
