@@ -13,6 +13,8 @@ class HELML {
     static CUSTOM_VALUE_ENCODER = null;
     static CUSTOM_VALUE_DECODER = null;
 
+    static ENABLE_BONES = true; // Enable use "next"-keys like :--:
+
     static encode(arr, url_mode = false) {
         let results_arr = [];
 
@@ -22,11 +24,20 @@ class HELML {
         let str_imp = url_mode ? "~" : "\n";
         let lvl_ch = url_mode ? '.' : ':';
         let spc_ch = url_mode ? '_' : ' ';
-        HELML._encode(arr, results_arr, 0, lvl_ch, spc_ch);
+
+        // is the object a list with sequential keys?
+        let is_list = Array.isArray(arr);
+        if (!is_list && HELML.ENABLE_BONES) {
+            const keys = Object.keys(arr);
+            const expectedNumKeys = Array.from({ length: keys.length }, (_, i) => String(i));
+            is_list = keys.every((key, index) => key === expectedNumKeys[index]);
+        }
+
+        HELML._encode(arr, results_arr, 0, lvl_ch, spc_ch, is_list);
         return results_arr.join(str_imp);
     }
 
-    static _encode(arr, results_arr, level = 0, lvl_ch = ":", spc_ch = " ") {
+    static _encode(arr, results_arr, level = 0, lvl_ch = ":", spc_ch = " ", is_list = false) {
 
         // Set value encoder function as default valueEncoder or custom user function
         const valueEncoFun = HELML.CUSTOM_VALUE_ENCODER === null ? HELML.valueEncoder : HELML.CUSTOM_VALUE_ENCODER;
@@ -34,25 +45,31 @@ class HELML {
         for (let key in arr) {
             let value = arr[key];
     
-            // encode key in base64url if it contains unwanted characters
-            let fc = key.charAt(0);
-            let lc = key.charAt(key.length - 1);
-            if (key.indexOf(lvl_ch) !== -1 || key.indexOf('~') !== -1 || fc === '#' || fc === spc_ch || fc === ' ') {
-                fc = "-";
-            }
-            if (fc === "-" || lc === spc_ch || lc === ' ' || !/^[ -~]+$/.test(key)) {
-                // add "-" to the beginning of the key to indicate it's in base64url
-                key = "-" + HELML.base64Uencode(key);
+            if (is_list && HELML.ENABLE_BONES) {
+                key = '--';
+            } else {
+                // encode key in base64url if it contains unwanted characters
+                let fc = key.charAt(0);
+                let lc = key.charAt(key.length - 1);
+                if (key.indexOf(lvl_ch) !== -1 || key.indexOf('~') !== -1 || fc === '#' || fc === spc_ch || fc === ' ' || fc === '') {
+                    fc = "-";
+                }
+                if (fc === "-" || lc === spc_ch || lc === ' ' || !/^[ -~]+$/.test(key)) {
+                    // add "-" to the beginning of the key to indicate it's in base64url
+                    key = "-" + HELML.base64Uencode(key);
+                }
             }
     
             // add the appropriate number of colons to the left of the key, based on the current level
             key = lvl_ch.repeat(level) + key;
     
-            if (value !== null && (Array.isArray(value) || typeof value === 'object' )) {
+            let is_arr = Array.isArray(value);
+
+            if (value !== null && (is_arr || typeof value === 'object' )) {
                 // if the value is an array or iterable, call this function recursively and increase the level
-                results_arr.push(Array.isArray(value) ? key + ":" : key);
+                results_arr.push(is_arr ? key + ":" : key);
                 value = HELML.iterablize(value);
-                HELML._encode(value, results_arr, level + 1, lvl_ch, spc_ch);
+                HELML._encode(value, results_arr, level + 1, lvl_ch, spc_ch, is_arr);
             } else {
                 // if the value is not an array, run it through a value encoding function
                 value = valueEncoFun(value, spc_ch);
@@ -117,14 +134,6 @@ class HELML {
             let key = firstDiv === -1 ? line : line.substring(0, firstDiv);
             let value = firstDiv === -1 ? null : line.substring(firstDiv + 1);            
     
-            // Decode the key if it starts with an equals sign
-            if (typeof key === "string" && key.charAt(0) === '-') {
-                key = HELML.base64Udecode(key.substring(1));
-                if (!key) {
-                    key = "ERR";
-                }
-            }
-    
             // Remove keys from the stack until it matches the current level
             while (stack.length > level) {
                 stack.pop();
@@ -135,6 +144,19 @@ class HELML {
             for (let parentKey of stack) {
                 parent = parent[parentKey];
             }
+    
+            // Decode the key if it starts with an equals sign
+            if (typeof key === "string" && key.charAt(0) === '-') {
+                if (key === '--' || key === '---') {
+                    // The bone-key means "next number". Bone keys like :--: 
+                    key = (typeof parent === 'object') ? Object.keys(parent).length : 0;
+                } else {
+                    let decoded_key = HELML.base64Udecode(key.substring(1));
+                    if (false !== decoded_key) {
+                        key = decoded_key;
+                    }
+                }
+            }        
     
             // If the value is null, start a new array and add it to the parent array
             if (value === null || value === '') {
