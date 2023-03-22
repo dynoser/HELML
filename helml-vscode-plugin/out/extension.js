@@ -3,6 +3,7 @@ const HELML = require('./HELML');
 const jsesc = require('./jsesc');
 const phparr = require('./phparr');
 const pythonarr = require('./pythonarr');
+//const toYaml = require('./toyaml');
 
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.toJSON = exports.fromJSON = exports.deactivate = exports.activate = void 0;
@@ -114,11 +115,33 @@ function activate(context) {
         }
     });
 
+    // const yamlEncoded = vscode.commands.registerCommand('helml.toYAML', () => {
+    //     const editor = vscode.window.activeTextEditor;
+    //     if (!editor) {
+    //         return;
+    //     }
+    //     const { document, selection } = editor;
+    //     const sel_text = document.getText(selection);
+
+    //     if (!sel_text) {
+    //         vscode.window.showWarningMessage('No text selected!');
+    //         return;
+    //     }
+
+    //     const convertedText = HELMLtoYAML(sel_text);
+    //     if (convertedText) {
+    //         editor.edit(editBuilder => {
+    //             editBuilder.replace(selection, convertedText);
+    //         });
+    //     }
+    // });
+
     context.subscriptions.push(jsonEncoded);
     context.subscriptions.push(helmlEncoded);
     context.subscriptions.push(jsEncoded);
     context.subscriptions.push(phpEncoded);
     context.subscriptions.push(pythonEncoded);
+    // context.subscriptions.push(yamlEncoded);
 }
 
 exports.activate = activate;
@@ -158,6 +181,20 @@ function HELMLtoPython(sel_text) {
 }
 
 exports.HELMLtoPHP = HELMLtoPython;
+
+// function HELMLtoYAML(sel_text) {
+//     try {
+//         const objArr = HELML.decode(sel_text);
+//         const code_str = toYaml(objArr, 1);
+//         return code_str;
+//     } catch (e) {
+//         console.error("Error: failed to encode HELML to YAML code", e);
+//         vscode.window.showErrorMessage('Failed to encode HELML to YAML code');
+//         return null;
+//     }
+// }
+
+// exports.HELMLtoYAML = HELMLtoYAML;
 
 function HELMLtoPHP(sel_text) {
     try {
