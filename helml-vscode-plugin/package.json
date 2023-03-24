@@ -25,6 +25,19 @@
 	],
 	"main": "./out/extension.js",
   "contributes": {
+    "languages": [
+      {
+          "id": "helml",
+          "extensions": [".helml"]
+      }
+    ],
+    "grammars": [
+      {
+          "language": "helml",
+          "scopeName": "source.helml",
+          "path": "./syntaxes/helml.tmLanguage.json"
+      }
+    ],
     "commands": [
       {
 				"command": "helml.toJSON",

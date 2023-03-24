@@ -1,0 +1,167 @@
+{
+  "scopeName": "source.helml",
+  "patterns": [
+    {
+      "include": "#comment"
+    },
+
+
+    {
+      "include": "#value_1spc_2spc_quotes_rule"
+    },
+    {
+      "include": "#value_encoded_rule"
+    },
+    {
+      "include": "#value_encoded_error"
+    },
+
+
+    {
+      "include": "#key_encoded_rule"
+    },
+    {
+      "include": "#key_encoded_error"
+    },
+    {
+      "include": "#key_encoded_create"
+    },
+
+    {
+      "include": "#key_plain_rule"
+    },
+    {
+      "include": "#key_plain_create"
+    }
+  ],
+  "repository": {
+
+    "comment": {
+      "name": "comment.line.number-sign.helml",
+      "match": "^\\s*#.*$"
+    },
+
+    "value_1spc_2spc_quotes_rule": {
+      "patterns": [
+        {
+          "name": "string.unquoted.helml",
+          "match": "(?<=[^:\\s]:\\s{1})\\S.*"
+        },
+        {
+          "name": "constant.numeric.helml",
+          "match": "(?<=[^:\\s]:\\s{2})\\S.*"
+        },
+        {
+          "name": "string.quoted.double.helml",
+          "match": "(?<=[^:\\s]:\")\\S.*(?=\")"
+        },
+        {
+          "name": "string.quoted.single.helml",
+          "match": "(?<=[^:\\s]:\\')\\S.*(?=\\')"
+        }
+      ]
+    },
+
+    "value_encoded_rule": {
+      "patterns": [
+        {
+          "name": "comment.base64url.helml",
+          "comment": "value in base64",
+          "match": "(?<=[^:\\s]:-)([A-Za-z0-9-_+/=]+)$"
+        }
+      ]
+    },
+
+    "value_encoded_error" : {
+      "patterns": [
+        {
+          "match": "(?<=[^:\\s]:-)([A-Za-z0-9-_+/=]*)([^A-Za-z0-9-_+/=].*)$",
+          "comment": "Value-encoded with error",
+          "captures": {
+            "1": {"name": "deprecated.helml"},
+            "2": {"name": "invalid.helml"}
+          }
+        }
+      ]
+    },
+
+    
+    "key_plain_rule": {
+      "patterns": [
+        {
+          "match": "^\\s*(:*)([^-\\s:]{1}[^:\\n]*):[^\n]",
+          "comment": "Key-plain before value",
+          "captures": {
+            "1": {"name": "punctuation.separator.colon.helml"},
+            "2": {"name": "entity.name.tag.helml"}
+          }
+        }
+      ]
+    },
+
+    "key_plain_create": {
+      "patterns": [
+        {
+          "match": "^\\s*(:*)([^-\\s:]{1}[^:\\n]*)(:$|(?=$))",
+          "comment": "Key-plain without value (create sub-array)",
+          "captures": {
+            "1": {"name": "punctuation.separator.colon.helml"},
+            "2": {"name": "entity.name.tag.helml"}
+          }
+        }
+      ]
+    },
+
+    "key_encoded_create" : {
+      "patterns": [
+        {
+          "match": "^\\s*(:*)-([A-Za-z0-9-_+/=]*)(:$|(?=$))",
+          "comment": "Key-encoded without value (create sub-array)",
+          "captures": {
+            "1": {"name": "punctuation.separator.colon.helml"},
+            "2": {"name": "entity.name.tag.helml"}
+          }
+        }
+      ]
+    },
+
+    "key_encoded_error" : {
+      "patterns": [
+        {
+          "match": "^\\s*(:*)-[A-Za-z0-9-_+/=]*([^A-Za-z0-9-_+/=\\s:]+[^:]*)(:|$)",
+          "name": "deprecated.helml",
+          "comment": "Key-encoded with error",
+          "captures": {
+            "2": {"name": "invalid.helml"}
+          }
+        }
+      ]
+    },
+
+    "key_encoded_rule": {
+      "patterns": [
+        {
+          "comment": "Key-encoded before value",
+          "match": "^\\s*(:*)-([A-Za-z0-9-_+/=]*):[^\\n]",
+          "captures": {
+            "1": {"name": "punctuation.separator.colon.helml"},
+            "2": {"name": "keyword.control.helml"}
+          }
+        }
+      ]
+    },
+    "key_encoded_error(test_saved)": {
+      "patterns": [
+        {
+          "comment": "Key-enco-error before value",
+          "match": "^\\s*(:*)-(?=.*[^A-Za-z0-9-_+/=\\s]):[^\\n]*",
+          "name": "invalid.helml",
+          "captures": {
+            "1": {"name": "punctuation.separator.colon.helml"},
+            "2": {"name": "keyword.control.helml"}
+          }
+        }
+      ]
+    }
+  }
+}

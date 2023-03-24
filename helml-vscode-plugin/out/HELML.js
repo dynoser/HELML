@@ -13,7 +13,8 @@ class HELML {
     static CUSTOM_VALUE_ENCODER = null;
     static CUSTOM_VALUE_DECODER = null;
 
-    static ENABLE_BONES = true; // Enable use "next"-keys like :--:
+    static ENABLE_BONES = true; // For encode: enable use "next"-keys like :--:
+    static ENABLE_SPC_IDENT = true; // For encode: add space-indentation at begin of string
 
     static encode(arr, url_mode = false) {
         let results_arr = [];
@@ -62,6 +63,11 @@ class HELML {
     
             // add the appropriate number of colons to the left of the key, based on the current level
             key = lvl_ch.repeat(level) + key;
+
+            // add space-ident to the left of the key (if need)
+            if (HELML.ENABLE_SPC_IDENT && spc_ch === ' ') {
+                key = spc_ch.repeat(level) + key;
+            }
     
             let is_arr = Array.isArray(value);
 
@@ -191,7 +197,7 @@ class HELML {
                 }
                 if (need_encode || !reg_str.test(value) || ('_' === spc_ch && value.indexOf('~') !== -1)) {
                     // if the string contains special characters, encode it in base64
-                    return HELML.base64Uencode(value);
+                    return "-" + HELML.base64Uencode(value);
                 } else if (!value.length || spc_ch === value[0] || spc_ch === value.slice(-1) || /\s/.test(value.slice(-1))) {
                     // for empty strings or those that have spaces at the beginning or end
                     return "'" + value + "'";
@@ -212,7 +218,7 @@ class HELML {
                     value = "NAN";
                 } else if ('_' === spc_ch && !Number.isInteger(value)) {
                     // for url-mode because dot-inside
-                    return HELML.base64Uencode(value);
+                    return "-" + HELML.base64Uencode(value);
                 }
                 /* falls through */
             case 'bigint':
@@ -236,27 +242,32 @@ class HELML {
                 return encodedValue.slice(1);
             }
             // if the string starts with two spaces, then it encodes a non-string value
-            encodedValue = encodedValue.slice(2); // strip left spaces
-            if (encodedValue in HELML.SPEC_TYPE_VALUES) {
-                return HELML.SPEC_TYPE_VALUES[encodedValue];
+            let slicedValue = encodedValue.slice(2); // strip left spaces
+            if (slicedValue in HELML.SPEC_TYPE_VALUES) {
+                return HELML.SPEC_TYPE_VALUES[slicedValue];
             }
-            if (/^-?\d+(.\d+)?$/.test(encodedValue)) {
+            if (/^-?\d+(.\d+)?$/.test(slicedValue)) {
                 // it's probably a numeric value
-                if (encodedValue.indexOf('.') !== -1) {
+                if (slicedValue.indexOf('.') !== -1) {
                     // if there's a decimal point, it's a floating point number
-                    return parseFloat(encodedValue);
+                    return parseFloat(slicedValue);
                 } else {
                     // if there's no decimal point, it's an integer
-                    return parseInt(encodedValue, 10);
+                    return parseInt(slicedValue, 10);
                 }
             }
             // custom user-defined function
             if (typeof HELML.CUSTOM_FORMAT_DECODER === 'function') {
                 return HELML.CUSTOM_FORMAT_DECODER(encodedValue, spc_ch);
             }
-            return encodedValue;
+            return slicedValue;
         } else if ('"' === fc || "'" === fc) { // it's likely that the string is enclosed in single or double quotes
-            return encodedValue.slice(1, -1); // trim the presumed quotes at the edges and return the interior
+            encodedValue = encodedValue.slice(1, -1); // trim the presumed quotes at the edges
+            return (fc === '"') ? HELML.stripcslashes(encodedValue) : encodedValue;
+        } else if ("-" === fc) {
+            encodedValue = encodedValue.slice(1);
+        } else if (typeof HELML.CUSTOM_FORMAT_DECODER === 'function') {
+            return HELML.CUSTOM_FORMAT_DECODER(encodedValue, spc_ch);
         }
         // if there are no spaces or quotes at the beginning, the value should be in base64
         return HELML.base64Udecode(encodedValue);
@@ -316,7 +327,19 @@ class HELML {
         }
         return arr;
     }
-    
+    static stripcslashes(str) {
+        const controlCharsMap = {
+          '\\n': '\n',
+          '\\t': '\t',
+          '\\r': '\r',
+          '\\b': '\b',
+          '\\f': '\f',
+          '\\v': '\v',
+          '\\0': '\0',
+          '\\\\': '\\'
+        };
+        return str.replace(/\\(n|t|r|b|f|v|0|\\)/g, (match) => controlCharsMap[match]);
+      }
 }    
 
 module.exports = HELML;
