@@ -1,8 +1,8 @@
 {
-  "name": "helmlext",
-  "displayName": "helmlext",
+  "name": "helml",
+  "displayName": "helml",
   "description": "Plugin to encode/decode HELML data",
-  "version": "0.0.5",
+  "version": "0.0.7",
   "publisher": "dynoser",
   "license": "MIT",
   "repository": {
@@ -17,11 +17,13 @@
   ],
 	"icon": "images/icon.png",
 	"activationEvents": [
-		"onCommand:helmlext.fromJSON",
-		"onCommand:helmlext.toJSON",
-    "onCommand:helmlext.toJavaScript",
-    "onCommand:helmlext.toPHP",
-    "onCommand:helmlext.toPython"
+    "onLanguage:json",
+ 		"onCommand:helml.fromJSON",
+		"onCommand:helml.toJSON",
+    "onCommand:helml.fromJSONDoc",
+    "onCommand:helml.toJavaScript",
+    "onCommand:helml.toPHP",
+    "onCommand:helml.toPython"
 	],
 	"main": "./out/extension.js",
   "contributes": {
@@ -47,6 +49,10 @@
 				"command": "helml.fromJSON",
 				"title": "HELML fromJSON"
 			},
+      {
+        "command": "helml.fromJSONDoc",
+        "title": "HELML fromJSON to NewDoc"
+      },
       {
         "command": "helml.toJavaScript",
         "title": "HELML toJavaScript"

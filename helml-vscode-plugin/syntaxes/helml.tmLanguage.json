@@ -16,7 +16,9 @@
       "include": "#value_encoded_error"
     },
 
-
+    {
+      "include": "#key_bone_rule"
+    },
     {
       "include": "#key_encoded_rule"
     },
@@ -93,7 +95,7 @@
           "comment": "Key-plain before value",
           "captures": {
             "1": {"name": "punctuation.separator.colon.helml"},
-            "2": {"name": "entity.name.tag.helml"}
+            "2": {"name": "meta.object-literal.key"}
           }
         }
       ]
@@ -150,6 +152,20 @@
         }
       ]
     },
+
+    "key_bone_rule": {
+      "patterns": [
+        {
+          "match": "^\\s*(:*)([-]+)[:\\n]",
+          "comment": "Key-bone",
+          "captures": {
+            "1": {"name": "punctuation.separator.colon.helml"},
+            "2": {"name": "entity.name.tag.helml"}
+          }
+        }
+      ]
+    },
+
     "key_encoded_error(test_saved)": {
       "patterns": [
         {

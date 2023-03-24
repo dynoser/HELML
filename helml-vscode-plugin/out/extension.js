@@ -1,4 +1,6 @@
 'use strict';
+const fs = require('fs');
+
 const HELML = require('./HELML');
 const jsesc = require('./jsesc');
 const phparr = require('./phparr');
@@ -10,8 +12,8 @@ exports.toJSON = exports.fromJSON = exports.deactivate = exports.activate = void
 
 const vscode = require("vscode");
 
-function activate(context) {
-    const jsonEncoded = vscode.commands.registerCommand('helml.toJSON', () => {
+function cre_conv_fn(converter_fn) {
+    return () => {
         const editor = vscode.window.activeTextEditor;
         if (!editor) {
             return;
@@ -24,124 +26,94 @@ function activate(context) {
             return;
         }
 
-        const convertedText = HELMLtoJSON(sel_text);
+        const convertedText = converter_fn(sel_text);
         if (convertedText) {
             editor.edit(editBuilder => {
                 editBuilder.replace(selection, convertedText);
             });
         }
-    });
-    const helmlEncoded = vscode.commands.registerCommand('helml.fromJSON', () => {
+    };
+}
+
+function activate(context) {
+    const jsonEncoded   = vscode.commands.registerCommand('helml.toJSON'      , cre_conv_fn(HELMLtoJSON));
+    const helmlEncoded  = vscode.commands.registerCommand('helml.fromJSON'    , cre_conv_fn(HELMLfromJSON));
+    const jsEncoded     = vscode.commands.registerCommand('helml.toJavaScript', cre_conv_fn(HELMLtoJavaScript));
+    const phpEncoded    = vscode.commands.registerCommand('helml.toPHP'       , cre_conv_fn(HELMLtoPHP));
+    const pythonEncoded = vscode.commands.registerCommand('helml.toPython'    , cre_conv_fn(HELMLtoPython));
+    
+    const helmlEncodedDoc = vscode.commands.registerCommand('helml.fromJSONDoc', async () => {
         const editor = vscode.window.activeTextEditor;
         if (!editor) {
             return;
         }
         const { document, selection } = editor;
-        const sel_text = document.getText(selection);
+        let sel_text = document.getText(selection);
 
-        if (!sel_text) {
-            vscode.window.showWarningMessage('No text selected!');
-            return;
+        let wholeDocSel = !sel_text;
+        let docIsSaved = !document.isDirty;
+        let canCloseOld = wholeDocSel && docIsSaved;
+
+        if (sel_text) {
+            if (sel_text == document.getText()) {
+                wholeDocSel = true;
+            }
+        } else {
+            sel_text = document.getText();
         }
-
+    
         const convertedText = HELMLfromJSON(sel_text);
         if (convertedText) {
-            editor.edit(editBuilder => {
-                editBuilder.replace(selection, convertedText);
-            });
-        }
-    });
+
+            let fileName = document.fileName;
+            let newFile = undefined;
+
+            if (canCloseOld && fileName.endsWith('.json')) {
+                fileName = fileName.replace('.json', '.helml');
+                if (!fs.existsSync(fileName)) {
+                    fs.writeFileSync(fileName, convertedText);
+                    vscode.window.showInformationMessage("Created: " + fileName);
+                    newFile = await vscode.workspace.openTextDocument(fileName);
+                } else {
+                    vscode.window.showWarningMessage("Already exist: " + fileName);
+                }
+            }
     
-    const jsEncoded = vscode.commands.registerCommand('helml.toJavaScript', () => {
-        const editor = vscode.window.activeTextEditor;
-        if (!editor) {
-            return;
-        }
-        const { document, selection } = editor;
-        const sel_text = document.getText(selection);
+            if (newFile === undefined) {
+                newFile = await vscode.workspace.openTextDocument({
+                    content: convertedText,
+                    language: 'helml',
+                    
+                });
+            }
+            vscode.window.showTextDocument(newFile);
 
-        if (!sel_text) {
-            vscode.window.showWarningMessage('No text selected!');
-            return;
-        }
-
-        const convertedText = HELMLtoJavaScript(sel_text);
-        if (convertedText) {
-            editor.edit(editBuilder => {
-                editBuilder.replace(selection, convertedText);
-            });
+            if (canCloseOld) {
+                // Close old document
+                await vscode.commands.executeCommand('workbench.action.closeActiveEditor');
+            }
         }
     });
-
-    const phpEncoded = vscode.commands.registerCommand('helml.toPHP', () => {
-        const editor = vscode.window.activeTextEditor;
-        if (!editor) {
-            return;
-        }
-        const { document, selection } = editor;
-        const sel_text = document.getText(selection);
-
-        if (!sel_text) {
-            vscode.window.showWarningMessage('No text selected!');
-            return;
-        }
-
-        const convertedText = HELMLtoPHP(sel_text);
-        if (convertedText) {
-            editor.edit(editBuilder => {
-                editBuilder.replace(selection, convertedText);
-            });
-        }
-    });
-    
-    const pythonEncoded = vscode.commands.registerCommand('helml.toPython', () => {
-        const editor = vscode.window.activeTextEditor;
-        if (!editor) {
-            return;
-        }
-        const { document, selection } = editor;
-        const sel_text = document.getText(selection);
-
-        if (!sel_text) {
-            vscode.window.showWarningMessage('No text selected!');
-            return;
-        }
-
-        const convertedText = HELMLtoPython(sel_text);
-        if (convertedText) {
-            editor.edit(editBuilder => {
-                editBuilder.replace(selection, convertedText);
-            });
-        }
-    });
-
-    // const yamlEncoded = vscode.commands.registerCommand('helml.toYAML', () => {
-    //     const editor = vscode.window.activeTextEditor;
-    //     if (!editor) {
-    //         return;
-    //     }
-    //     const { document, selection } = editor;
-    //     const sel_text = document.getText(selection);
-
-    //     if (!sel_text) {
-    //         vscode.window.showWarningMessage('No text selected!');
-    //         return;
-    //     }
-
-    //     const convertedText = HELMLtoYAML(sel_text);
-    //     if (convertedText) {
-    //         editor.edit(editBuilder => {
-    //             editBuilder.replace(selection, convertedText);
-    //         });
-    //     }
-    // });
 
     context.subscriptions.push(jsonEncoded);
+    context.subscriptions.push(helmlEncodedDoc);
     context.subscriptions.push(helmlEncoded);
     context.subscriptions.push(jsEncoded);
     context.subscriptions.push(phpEncoded);
     context.subscriptions.push(pythonEncoded);
     // context.subscriptions.push(yamlEncoded);
+
+    // context.subscriptions.push(
+    //     vscode.languages.registerContextMenuProvider('json', {
+    //         provideContextMenu: (document, selection) => {
+    //             const convertToHelmlMenuItem = new vscode.MenuItem(
+    //                 "Convert to HELML",
+    //                 () => vscode.commands.executeCommand('helml.fromJSON')
+    //             );
+    //             return [convertToHelmlMenuItem];
+    //         }
+    //     })
+    // );
 }
 
 exports.activate = activate;
