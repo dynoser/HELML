@@ -50,9 +50,9 @@ def generate_nested_dict(depth: int = 3, size: int = 5) -> Dict[str, Any]:
         return {random_string(random.randint(3, 5)): (generate_nested_dict(depth - 1, size) if random.random() < 0.5 else random_value()) for _ in range(size)}
 
 def custom_decoder_function(value: str, spc_ch: str) -> str:
-    if value.startswith("T"):
+    if value.startswith("  T"):
         try:
-            timestamp = float(value[1:])
+            timestamp = float(value[3:])
             dt = datetime.datetime.fromtimestamp(timestamp)
             return dt.strftime("%Y-%m-%d %H:%M:%S")
         except ValueError:
@@ -124,10 +124,10 @@ class TestHELML(unittest.TestCase):
         -Qg=: B-key
 
         # Value in base64
-        C:Qy1rZXk=
+        C:-Qy1rZXk=
 
         # Key and Value base64-encoded 
-        -RA:RC1rZXk
+        -RA:-RC1rZXk
 
         # Boolean
         TR:  T
@@ -148,6 +148,20 @@ class TestHELML(unittest.TestCase):
 
         decoded_data = HELML.decode(encoded_data)
         assert decoded_data == expected_data, f"Error: decoded data {decoded_data}, expected data {expected_data}"
+    
+    def test_utf8_codes(self):
+        h_ml = '''
+        塕煘錇趁塿絩瀬: 塕煘錇趁塿絩瀬
+        '''
+        first_dec = HELML.decode(h_ml)
+        encoded_data = HELML.encode(first_dec, False)
+        second_dec = HELML.decode(encoded_data)
+        assert first_dec == second_dec, f"Error: first_dec {first_dec}, second_dec {second_dec}"
+
+
+        encoded_data = HELML.encode(first_dec, True)
+        second_dec = HELML.decode(encoded_data)
+        assert first_dec == second_dec, f"Error URL in mode: first_dec {first_dec}, second_dec {second_dec}"
 
     def test_nan_type(self):
         h_ml = 'A:  NAN'
@@ -186,6 +200,9 @@ class TestHELML(unittest.TestCase):
 
 if __name__ == '__main__':
     t = TestHELML()
+    t.test_encode_decode_url_mode()
+    t.test_utf8_codes()
+    t.test_custom_decoder()
     t.test_main_types()
     t.test_special_types()
     t.test_nan_type()

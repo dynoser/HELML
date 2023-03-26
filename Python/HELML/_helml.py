@@ -17,6 +17,9 @@ class HELML:
     CUSTOM_FORMAT_DECODER = None
     CUSTOM_VALUE_ENCODER = None
     CUSTOM_VALUE_DECODER = None
+    
+    ENABLE_SPC_IDENT = True # For encode: add space-indentation at begin of string
+
 
     @staticmethod
     def encode(
@@ -40,6 +43,9 @@ class HELML:
         spc_ch = "_" if url_mode else " "
 
         HELML._encode(arr, results_arr, 0, lvl_ch, spc_ch)
+
+        if url_mode and len(results_arr) == 1:
+            results_arr.append('')
 
         return str_imp.join(results_arr)
     
@@ -73,17 +79,27 @@ class HELML:
             if not isinstance(key, str):
                 key = str(key)
 
-            # get first char
-            first_char = key[0]
+            # check first char
+            first_char = key[:1]
             # encode key in base64url if it contains unwanted characters
-            if lvl_ch in key or "~" in key or first_char == "#" or first_char == spc_ch or first_char == ' ':
-                first_char = "-"
-            if first_char == "-" or key[-1] == spc_ch or key[-1] == ' ' or not all(c.isprintable() for c in key):
+            if lvl_ch in key or "~" in key or first_char == "#" or first_char == spc_ch or first_char == ' ' or first_char == '':
+                need_encode = True
+            else:
+                if spc_ch == '_':
+                    need_encode = not re.match(r"^[ -~]*$", key, flags=re.UNICODE)
+                else:
+                    need_encode = not all(c.isprintable() for c in key)
+
+            if need_encode or first_char == "-" or key[-1] == spc_ch or key[-1] == ' ':
                 # add "-" to the beginning of the key to indicate it's in base64url
                 key = "-" + HELML.base64url_encode(key)
 
             # add the appropriate number of colons to the left of the key, based on the current level
             key = lvl_ch * level + key
+
+             # add space-ident to the left of the key (if need)
+            if HELML.ENABLE_SPC_IDENT and spc_ch == ' ':
+                key = spc_ch * level + key
 
             if isinstance(value, (list, dict, tuple)):
                 # if the value is a dictionary, call this function recursively and increase the level
@@ -100,7 +116,8 @@ class HELML:
 
     @staticmethod
     def decode(
-        src_rows: Union[str, List[str], Dict[str, str]]
+        src_rows: Union[str, List[str], Dict[str, str]],
+        only_layer_name: Union[str, int] = 0
     ) -> Dict:
         """
         Decodes a HELML formatted string or list of strings into a nested dictionary.
@@ -118,6 +135,10 @@ class HELML:
 
         lvl_ch = ":"
         spc_ch = " "
+        layer_init = 0
+        layer_curr = layer_init
+        layer_name = only_layer_name if only_layer_name else layer_init
+
         # If the input is an array, use it. Otherwise, split the input string into an array.
         if isinstance(src_rows, (list, dict)):
             if isinstance(src_rows, dict):
@@ -168,28 +189,36 @@ class HELML:
             key = parts[0] if parts[0] else 0
             value = parts[1] if len(parts) > 1 else None
 
-            # Decode the key if it starts with an equals sign
-            if isinstance(key, str) and key.startswith("-"):
-                key = HELML.base64url_decode(key[1:])
-                if not key:
-                    key = "ERR"
-
             # Remove keys from the stack until it matches the current level
             while len(stack) > level:
                 stack.pop()
+                layer_curr = layer_init
 
             # Find the parent element in the result dictionary for the current key
             parent = result
             for parent_key in stack:
                 parent = parent[parent_key]
 
+            # Decode the key if it starts with an equals sign
+            if isinstance(key, str) and key.startswith("-"):
+                if key == '-+':
+                    layer_curr = value if value else (layer_curr + 1)
+                    continue
+                elif key == '--' or key == '---':
+                    key = (str)(len(parent))
+                else:
+                    key = HELML.base64url_decode(key[1:])
+                    if key == None:
+                        key = "ERR"
+
             # If the value is null, start a new dictionary and add it to the parent dictionary
             if value is None or value == '':
+                layer_curr = layer_init
                 parent[key] = {}
                 stack.append(key)
                 if value == '':
                     tolist.append(stack.copy())
-            else:
+            elif layer_name == layer_curr:
                 # Decode the value by selected value-decoder-function
                 value = value_deco_fun(value, spc_ch)
                 # Add the key-value pair to the current dictionary
@@ -230,17 +259,17 @@ class HELML:
 
         value_type = type(value).__name__
         if value_type == "str":
-            reg_str = r"^[ -~]*$"
             if spc_ch == "_": # for url-mode
                 need_encode = "~" in value
+                if not need_encode:
+                    need_encode = not re.match(r"^[ -~]*$", value, flags=re.UNICODE)
             else:
-                need_encode = False
+                need_encode = not all(c.isprintable() for c in value)
                 # reg_str = r"^[\p{Print}]*$"
 
-            # if need_encode or not all(c.isprintable() for c in value) or ("_" == spc_ch and "~" in value):
-            if need_encode or not re.match(reg_str, value, flags=re.UNICODE) or ("_" == spc_ch and "~" in value):
+            if need_encode:
                 # if the string contains special characters, encode it in base64
-                return HELML.base64url_encode(value)
+                return '-' + HELML.base64url_encode(value)
             elif not value or value[0] == spc_ch or value[-1] == spc_ch or value[-1] == ' ':
                 # for empty strings or those that have spaces at the beginning or end
                 return "'" + value + "'"
@@ -285,18 +314,18 @@ class HELML:
                 # if the string starts with only one space, return the string after it
                 return encoded_value[1:]
             # if the string starts with two spaces, then it encodes a non-string value
-            encoded_value = encoded_value[2:]  # strip left spaces
-            if encoded_value in HELML.SPEC_TYPE_VALUES:
-                return HELML.SPEC_TYPE_VALUES[encoded_value]
+            sliced_value = encoded_value[2:]  # strip left spaces
+            if sliced_value in HELML.SPEC_TYPE_VALUES:
+                return HELML.SPEC_TYPE_VALUES[sliced_value]
 
-            if HELML.is_numeric(encoded_value):
+            if HELML.is_numeric(sliced_value):
                 # it's probably a numeric value
-                if '.' in encoded_value:
+                if '.' in sliced_value:
                     # if there's a decimal point, it's a floating point number
-                    return float(encoded_value)
+                    return float(sliced_value)
                 else:
                     # if there's no decimal point, it's an integer
-                    return int(encoded_value)
+                    return int(sliced_value)
 
             if HELML.CUSTOM_FORMAT_DECODER is not None:
                 encoded_value = HELML.CUSTOM_FORMAT_DECODER(encoded_value, spc_ch)
@@ -310,12 +339,16 @@ class HELML:
                 return encoded_value.encode('utf-8').decode('unicode_escape')
             except ValueError:
                 return False
+        elif first_char == '-':
+            return HELML.base64url_decode(encoded_value[1:])
 
-        # if there are no spaces or quotes at the beginning, the value should be in base64
-        try:
-            return HELML.base64url_decode(encoded_value)
-        except ValueError:
-            return encoded_value
+        # if there are no spaces or quotes or "-" at the beginning
+        if HELML.CUSTOM_FORMAT_DECODER is not None:
+            # use custom-decoder if defined
+            return HELML.CUSTOM_FORMAT_DECODER(encoded_value, spc_ch)
+
+        # fallback: will return decoded string or None
+        return HELML.base64url_decode(encoded_value)
 
     @staticmethod
     def base64url_encode(string: str) -> str:
@@ -324,8 +357,18 @@ class HELML:
 
     @staticmethod
     def base64url_decode(s: str) -> str:
-        s += "=" * (4 - len(s) % 4)
-        return base64.b64decode(s.translate(str.maketrans('-_', '+/')).encode()).decode()
+        l = len(s)
+        if not l:
+            return ""
+        l %= 4
+        if l:
+            s += "=" * (4 - l)
+        try:
+            decoded = base64.b64decode(s.translate(str.maketrans('-_', '+/')).encode()).decode()
+            return decoded
+        except Exception:
+            return None
+
 
     @staticmethod
     def is_numeric(value: str) -> bool:
