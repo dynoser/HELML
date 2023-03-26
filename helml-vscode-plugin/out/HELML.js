@@ -85,7 +85,7 @@ class HELML {
         }
     }
     
-    static decode(src_rows) {
+    static decode(src_rows, only_layer_name = null) {
         // Set value decoder function as default valueDecoder or custom user function
         const valueDecoFun = HELML.CUSTOM_VALUE_DECODER === null ? HELML.valueDecoder : HELML.CUSTOM_VALUE_DECODER;
 
@@ -93,6 +93,9 @@ class HELML {
         let str_arr;
         let lvl_ch = ':';
         let spc_ch = ' ';
+        let layer_init = 0;
+        let layer_curr = layer_init;
+        let layer_name = only_layer_name !== null ? only_layer_name : layer_init;
 
         if (typeof src_rows === 'object') {
             str_arr = HELML.iterablize(src_rows);
@@ -143,6 +146,7 @@ class HELML {
             // Remove keys from the stack until it matches the current level
             while (stack.length > level) {
                 stack.pop();
+                layer_curr = layer_init;
             }
     
             // Find the parent element in the result array for the current key
@@ -156,19 +160,24 @@ class HELML {
                 if (key === '--' || key === '---') {
                     // The bone-key means "next number". Bone keys like :--: 
                     key = (typeof parent === 'object') ? Object.keys(parent).length : 0;
+                } else if (key === '-+') {
+                    // Layer change
+                    layer_curr = value ? value : (layer_curr + 1);
+                    continue;
                 } else {
                     let decoded_key = HELML.base64Udecode(key.substring(1));
                     if (false !== decoded_key) {
                         key = decoded_key;
                     }
                 }
-            }        
-    
+            }
+
             // If the value is null, start a new array and add it to the parent array
             if (value === null || value === '') {
                 parent[key] = value === '' ? [] : {};
                 stack.push(key);
-            } else {
+                layer_curr = layer_init;
+            } else if (layer_name == layer_curr) {
                 // Decode the value by current decoder function
                 value = valueDecoFun(value, spc_ch);
                 // Add the key-value pair to the current array

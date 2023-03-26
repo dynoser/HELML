@@ -20,6 +20,9 @@
       "include": "#key_bone_rule"
     },
     {
+      "include": "#key_layer_set"
+    },
+    {
       "include": "#key_encoded_rule"
     },
     {
@@ -156,11 +159,42 @@
     "key_bone_rule": {
       "patterns": [
         {
-          "match": "^\\s*(:*)([-]+)[:\\n]",
+          "match": "^\\s*(:*)([-]{2,3})[:\\n]",
           "comment": "Key-bone",
           "captures": {
             "1": {"name": "punctuation.separator.colon.helml"},
             "2": {"name": "entity.name.tag.helml"}
+          }
+        }
+      ]
+    },
+
+    "key_layer_set": {
+      "patterns": [
+        {
+          "match": "^\\s*(:*)(\\-\\+)[:\\n]$",
+          "comment": "Key-Layer-Set-Next",
+          "captures": {
+            "1": {"name": "punctuation.separator.colon.helml"},
+            "2": {"name": "comment.helml"}
+          }
+        },
+        {
+          "match": "^\\s*(:*)(\\-\\+):[\\-\\s](.*)$",
+          "comment": "Key-Layer-Set-Error",
+          "captures": {
+            "1": {"name": "punctuation.separator.colon.helml"},
+            "2": {"name": "comment.helml"},
+            "3": {"name": "invalid.helml"}
+          }
+        },
+        {
+          "match": "^\\s*(:*)(\\-\\+):(\\S.*)$",
+          "comment": "Key-Layer-Set-Value",
+          "captures": {
+            "1": {"name": "punctuation.separator.colon.helml"},
+            "2": {"name": "comment.helml"},
+            "3": {"name": "entity.name.tag.helml"}
           }
         }
       ]

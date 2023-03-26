@@ -36,13 +36,13 @@ function cre_conv_fn(converter_fn) {
 }
 
 function activate(context) {
-    const jsonEncoded   = vscode.commands.registerCommand('helml.toJSON'      , cre_conv_fn(HELMLtoJSON));
-    const helmlEncoded  = vscode.commands.registerCommand('helml.fromJSON'    , cre_conv_fn(HELMLfromJSON));
-    const jsEncoded     = vscode.commands.registerCommand('helml.toJavaScript', cre_conv_fn(HELMLtoJavaScript));
-    const phpEncoded    = vscode.commands.registerCommand('helml.toPHP'       , cre_conv_fn(HELMLtoPHP));
-    const pythonEncoded = vscode.commands.registerCommand('helml.toPython'    , cre_conv_fn(HELMLtoPython));
+    const cmdToJSON   = vscode.commands.registerCommand('helml.toJSON'      , cre_conv_fn(HELMLtoJSON));
+    const cmdFromJSON = vscode.commands.registerCommand('helml.fromJSON'    , cre_conv_fn(HELMLfromJSON));
+    const cmdToJavaSc = vscode.commands.registerCommand('helml.toJavaScript', cre_conv_fn(HELMLtoJavaScript));
+    const cmdToPHP    = vscode.commands.registerCommand('helml.toPHP'       , cre_conv_fn(HELMLtoPHP));
+    const cmdToPython = vscode.commands.registerCommand('helml.toPython'    , cre_conv_fn(HELMLtoPython));
     
-    const helmlEncodedDoc = vscode.commands.registerCommand('helml.fromJSONDoc', async () => {
+    const cmdFromJsonDoc = vscode.commands.registerCommand('helml.fromJSONDoc', async () => {
         const editor = vscode.window.activeTextEditor;
         if (!editor) {
             return;
@@ -95,25 +95,13 @@ function activate(context) {
         }
     });
 
-    context.subscriptions.push(jsonEncoded);
-    context.subscriptions.push(helmlEncodedDoc);
-    context.subscriptions.push(helmlEncoded);
-    context.subscriptions.push(jsEncoded);
-    context.subscriptions.push(phpEncoded);
-    context.subscriptions.push(pythonEncoded);
-    // context.subscriptions.push(yamlEncoded);
-
-    // context.subscriptions.push(
-    //     vscode.languages.registerContextMenuProvider('json', {
-    //         provideContextMenu: (document, selection) => {
-    //             const convertToHelmlMenuItem = new vscode.MenuItem(
-    //                 "Convert to HELML",
-    //                 () => vscode.commands.executeCommand('helml.fromJSON')
-    //             );
-    //             return [convertToHelmlMenuItem];
-    //         }
-    //     })
-    // );
+    context.subscriptions.push(cmdToJSON);
+    context.subscriptions.push(cmdFromJsonDoc);
+    context.subscriptions.push(cmdFromJSON);
+    context.subscriptions.push(cmdToJavaSc);
+    context.subscriptions.push(cmdToPHP);
+    context.subscriptions.push(cmdToPython);
+    // context.subscriptions.push(yamlEncoded);    
 }
 
 exports.activate = activate;
@@ -209,3 +197,92 @@ function HELMLfromJSON(sel_text) {
 }
 
 exports.HELMLfromJSON = HELMLfromJSON;
+
+// Hover-controller block
+function parseLine(line, word) {
+    let result_str = null;
+    let key_str = "plain-key";
+    let value_str = " plain-value";
+
+    line = line.trim();
+    
+    if (!line.length || line.charAt(0) === '#') return;
+
+    let lvl_ch = ':';
+
+    // Calculate the level of nesting
+    let level = 0;
+    while (line.charAt(level) === lvl_ch) {
+        level++;
+    }
+
+    // If the line has colons at the beginning, remove them from the line
+    if (level) {
+        line = line.substring(level);
+    }
+
+    // Split the line into a key and a value (or null if the line starts a new array)
+    const firstDiv = line.indexOf(lvl_ch);
+    let key = firstDiv === -1 ? line : line.substring(0, firstDiv);
+    let value = firstDiv === -1 ? null : line.substring(firstDiv + 1);
+
+    // check key by first char
+    if (key.charAt(0) === '-') {
+        if (key === '--') {
+            // The bone-key means "next number".
+            key_str = "NextNum-key";
+            key = "[NextNum]";
+        } else if (key.startsWith('-+')) {
+            result_str = "Next-Layer";
+        } else {
+            key_str = "-base64-key";
+            let decoded_key = HELML.base64Udecode(key.substring(1));
+            if (false === decoded_key) {
+                result_str = "ERROR: encoded KEY contain illegal chars";
+            }
+        }
+    }
+
+    if (result_str === null) {
+        if (value === null) {
+            result_str = "Create sub-array: " + key;
+        } else if (value === "")  {
+            result_str = "Create LIST: " + key;
+        } else if (value.startsWith(' ')) {
+            if (value.startsWith('  ')) {
+                value_str = " value (<i>non-string<i>)";
+            }
+        } else if (value.charAt(0) === '-') {
+            value_str = "-base64-value";
+            let decoded_value = HELML.base64Udecode(value.substring(1));
+            if (false === decoded_value) {
+                result_str = "ERROR: encoded VALUE contain illegal chars";
+            }
+        } else {
+            value_str = "UNKNOWN or USER-DEFINED VALUE";
+        }
+    }
+
+    if (result_str === null) {
+        result_str = key_str + ":" + value_str;
+    }
+
+    return result_str;
+}
+
+const hoverProvider = {
+  provideHover(document, position) {
+    const line = document.lineAt(position);
+    const text = line.text;
+
+    const wordRange = document.getWordRangeAtPosition(position);
+    const word = document.getText(wordRange);
+
+    const parsedText = parseLine(text, word);
+    if (parsedText) {
+        return new vscode.Hover(parsedText);
+    }
+  }
+};
+
+vscode.languages.registerHoverProvider('helml', hoverProvider);

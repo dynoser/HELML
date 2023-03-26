@@ -17,13 +17,7 @@
   ],
 	"icon": "images/icon.png",
 	"activationEvents": [
-    "onLanguage:json",
- 		"onCommand:helml.fromJSON",
-		"onCommand:helml.toJSON",
-    "onCommand:helml.fromJSONDoc",
-    "onCommand:helml.toJavaScript",
-    "onCommand:helml.toPHP",
-    "onCommand:helml.toPython"
+    "onLanguage:json"
 	],
 	"main": "./out/extension.js",
   "contributes": {
