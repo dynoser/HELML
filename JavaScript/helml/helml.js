@@ -15,7 +15,7 @@ class HELML {
 
     static ENABLE_BONES = true; // For encode: enable use "next"-keys like :--:
     static ENABLE_SPC_IDENT = true; // For encode: add space-indentation at begin of string
-
+    
     static encode(arr, url_mode = false) {
         let results_arr = [];
 
@@ -35,6 +35,11 @@ class HELML {
         }
 
         HELML._encode(arr, results_arr, 0, lvl_ch, spc_ch, is_list);
+
+        if (url_mode && results_arr.length == 1) {
+            results_arr.push('');
+        }
+
         return results_arr.join(str_imp);
     }
 
@@ -102,13 +107,15 @@ class HELML {
         } else if (typeof src_rows === "string") {
             let exploder_ch;
             for (exploder_ch of ["\n", "~", "\r"]) {
-                if (src_rows.indexOf(exploder_ch) !== -1) break;
+                if (src_rows.indexOf(exploder_ch) !== -1) {
+                    if (exploder_ch === "~") {
+                        lvl_ch = '.';
+                        spc_ch = '_';
+                    }
+                    break;
+                }
             }
             str_arr = src_rows.split(exploder_ch);
-            if (exploder_ch === "~") {
-                lvl_ch = '.';
-                spc_ch = '_';
-            }
         } else {
             try {
                 str_arr = Array.from(src_rows);
