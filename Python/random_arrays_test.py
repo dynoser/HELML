@@ -152,6 +152,7 @@ class TestHELML(unittest.TestCase):
     def test_utf8_codes(self):
         h_ml = '''
         塕煘錇趁塿絩瀬: 塕煘錇趁塿絩瀬
+        фыва: пролджэ
         '''
         first_dec = HELML.decode(h_ml)
         encoded_data = HELML.encode(first_dec, False)
