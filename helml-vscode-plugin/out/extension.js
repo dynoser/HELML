@@ -5,6 +5,7 @@ const HELML = require('./HELML');
 const jsesc = require('./jsesc');
 const phparr = require('./phparr');
 const pythonarr = require('./pythonarr');
+//const htmlvshelml = require('./htmlvshelml');
 //const toYaml = require('./toyaml');
 
 Object.defineProperty(exports, "__esModule", { value: true });
@@ -36,11 +37,13 @@ function cre_conv_fn(converter_fn) {
 }
 
 function activate(context) {
-    const cmdToJSON   = vscode.commands.registerCommand('helml.toJSON'      , cre_conv_fn(HELMLtoJSON));
-    const cmdFromJSON = vscode.commands.registerCommand('helml.fromJSON'    , cre_conv_fn(HELMLfromJSON));
-    const cmdToJavaSc = vscode.commands.registerCommand('helml.toJavaScript', cre_conv_fn(HELMLtoJavaScript));
-    const cmdToPHP    = vscode.commands.registerCommand('helml.toPHP'       , cre_conv_fn(HELMLtoPHP));
-    const cmdToPython = vscode.commands.registerCommand('helml.toPython'    , cre_conv_fn(HELMLtoPython));
+    const cmdToJSON      = vscode.commands.registerCommand('helml.toJSON'      , cre_conv_fn(HELMLtoJSON));
+    const cmdFromJSON    = vscode.commands.registerCommand('helml.fromJSON'    , cre_conv_fn(HELMLfromJSON));
+    const cmdToJavaSc    = vscode.commands.registerCommand('helml.toJavaScript', cre_conv_fn(HELMLtoJavaScript));
+    const cmdToPHP       = vscode.commands.registerCommand('helml.toPHP'       , cre_conv_fn(HELMLtoPHP));
+    const cmdToPython    = vscode.commands.registerCommand('helml.toPython'    , cre_conv_fn(HELMLtoPython));
+//    const cmdHTMLtoHELML = vscode.commands.registerCommand('helml.HTMLtoHELML' , cre_conv_fn(HTMLtoHELML));
+//    const cmdHELMLtoHTML = vscode.commands.registerCommand('helml.HELMLtoHTML' , cre_conv_fn(HELMLtoHTML));
     
     const cmdFromJsonDoc = vscode.commands.registerCommand('helml.fromJSONDoc', async () => {
         const editor = vscode.window.activeTextEditor;
@@ -101,7 +104,8 @@ function activate(context) {
     context.subscriptions.push(cmdToJavaSc);
     context.subscriptions.push(cmdToPHP);
     context.subscriptions.push(cmdToPython);
-    // context.subscriptions.push(yamlEncoded);    
+    //context.subscriptions.push(cmdHTMLtoHELML);
+    //context.subscriptions.push(cmdHELMLtoHTML);
 }
 
 exports.activate = activate;
@@ -197,6 +201,33 @@ function HELMLfromJSON(sel_text) {
 }
 
 exports.HELMLfromJSON = HELMLfromJSON;
+
+// function HTMLtoHELML(sel_text) {
+//     try {
+//         const results_arr = htmlvshelml.html_to_helml(sel_text);
+//         const helml_str = results_arr.join("\n");
+//         return helml_str;
+//     } catch (e) {
+//         console.error("Error: can't convert HTML to HELML", e);
+//         vscode.window.showErrorMessage("Can't convert HTML to HELML!");
+//         return null;
+//     }
+// }
+
+// exports.HTMLtoHELML = HTMLtoHELML;
+
+// function HELMLtoHTML(sel_text) {
+//     try {
+//         const html_str = htmlvshelml.helml_to_html(sel_text);
+//         return html_str;
+//     } catch (e) {
+//         console.error("Error: can't convert HELML to HTML", e);
+//         vscode.window.showErrorMessage("Can't convert HELML to HTML!");
+//         return null;
+//     }
+// }
+
+// exports.HTMLtoHELML = HELMLtoHTML;
 
 // Hover-controller block
 function parseLine(line, word) {
