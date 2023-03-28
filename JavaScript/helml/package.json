@@ -1,6 +1,6 @@
 {
   "name": "helml",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "encode/decode HELML data",
   "main": "helml.js",
   "scripts": {
