@@ -2,7 +2,7 @@
   "name": "helml",
   "displayName": "helml",
   "description": "Plugin to encode/decode HELML data",
-  "version": "0.0.7",
+  "version": "0.0.8",
   "publisher": "dynoser",
   "license": "MIT",
   "repository": {
@@ -59,7 +59,22 @@
         "command": "helml.toPython",
         "title": "HELML toPython"
       }
-    ]
+    ],
+    "configuration": {
+      "title": "HELML Config",
+      "properties": {
+        "helml.enableident": {
+          "type": "boolean",
+          "default": true,
+          "description": "HELML encoder auto-space-ident enable"
+        },
+        "helml.enablebones": {
+          "type": "boolean",
+          "default": true,
+          "description": "HELML encoder enable next-keys (bones)"
+        }
+      }
+    }
   },
   "scripts": {
     "lint": "eslint .",

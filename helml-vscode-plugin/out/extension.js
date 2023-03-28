@@ -1,5 +1,4 @@
 'use strict';
-const fs = require('fs');
 
 const HELML = require('./HELML');
 const jsesc = require('./jsesc');
@@ -12,6 +11,34 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.toJSON = exports.fromJSON = exports.deactivate = exports.activate = void 0;
 
 const vscode = require("vscode");
+
+function reloadConfig() {
+    const config = vscode.workspace.getConfiguration('helml');
+    const enableident = config.get('enableident');
+    const enablebones = config.get('enablebones');
+    if (enableident !== undefined && enableiden !== HELML.ENABLE_SPC_IDENT) {
+      // устанавливаем значение в соответствии с настройками
+      config.update('enableident', enableident, true);
+      HELML.ENABLE_SPC_IDENT = enableident;
+    }
+    if (enablebones !== undefined && enablebones !== HELML.ENABLE_BONES) {
+      // устанавливаем значение в соответствии с настройками
+      config.update('enablebones', enablebones, true);
+      HELML.ENABLE_BONES = enablebones;
+    }
+}
+  
+reloadConfig();
+
+// Auto-update config on changes
+vscode.workspace.onDidChangeConfiguration(event => {
+    if (event.affectsConfiguration('helml.enableident')) {
+        reloadConfig();
+    }
+    if (event.affectsConfiguration('helml.enablebones')) {
+        reloadConfig();
+    }
+});
 
 function cre_conv_fn(converter_fn) {
     return () => {
@@ -71,16 +98,16 @@ function activate(context) {
             let fileName = document.fileName;
             let newFile = undefined;
 
-            if (canCloseOld && fileName.endsWith('.json')) {
-                fileName = fileName.replace('.json', '.helml');
-                if (!fs.existsSync(fileName)) {
-                    fs.writeFileSync(fileName, convertedText);
-                    vscode.window.showInformationMessage("Created: " + fileName);
-                    newFile = await vscode.workspace.openTextDocument(fileName);
-                } else {
-                    vscode.window.showWarningMessage("Already exist: " + fileName);
-                }
-            }
+            // if (canCloseOld && fileName.endsWith('.json')) {
+            //     fileName = fileName.replace('.json', '.helml');
+            //     if (!fs.existsSync(fileName)) {
+            //         fs.writeFileSync(fileName, convertedText);
+            //         vscode.window.showInformationMessage("Created: " + fileName);
+            //         newFile = await vscode.workspace.openTextDocument(fileName);
+            //     } else {
+            //         vscode.window.showWarningMessage("Already exist: " + fileName);
+            //     }
+            // }
     
             if (newFile === undefined) {
                 newFile = await vscode.workspace.openTextDocument({
@@ -146,19 +173,6 @@ function HELMLtoPython(sel_text) {
 
 exports.HELMLtoPHP = HELMLtoPython;
 
-// function HELMLtoYAML(sel_text) {
-//     try {
-//         const objArr = HELML.decode(sel_text);
-//         const code_str = toYaml(objArr, 1);
-//         return code_str;
-//     } catch (e) {
-//         console.error("Error: failed to encode HELML to YAML code", e);
-//         vscode.window.showErrorMessage('Failed to encode HELML to YAML code');
-//         return null;
-//     }
-// }
-
-// exports.HELMLtoYAML = HELMLtoYAML;
 
 function HELMLtoPHP(sel_text) {
     try {
@@ -201,33 +215,6 @@ function HELMLfromJSON(sel_text) {
 }
 
 exports.HELMLfromJSON = HELMLfromJSON;
-
-// function HTMLtoHELML(sel_text) {
-//     try {
-//         const results_arr = htmlvshelml.html_to_helml(sel_text);
-//         const helml_str = results_arr.join("\n");
-//         return helml_str;
-//     } catch (e) {
-//         console.error("Error: can't convert HTML to HELML", e);
-//         vscode.window.showErrorMessage("Can't convert HTML to HELML!");
-//         return null;
-//     }
-// }
-
-// exports.HTMLtoHELML = HTMLtoHELML;
-
-// function HELMLtoHTML(sel_text) {
-//     try {
-//         const html_str = htmlvshelml.helml_to_html(sel_text);
-//         return html_str;
-//     } catch (e) {
-//         console.error("Error: can't convert HELML to HTML", e);
-//         vscode.window.showErrorMessage("Can't convert HELML to HTML!");
-//         return null;
-//     }
-// }
-
-// exports.HTMLtoHELML = HELMLtoHTML;
 
 // Hover-controller block
 function parseLine(line, word) {
@@ -317,3 +304,46 @@ const hoverProvider = {
 };
 
 vscode.languages.registerHoverProvider('helml', hoverProvider);
+
+
+// function HTMLtoHELML(sel_text) {
+//     try {
+//         const results_arr = htmlvshelml.html_to_helml(sel_text);
+//         const helml_str = results_arr.join("\n");
+//         return helml_str;
+//     } catch (e) {
+//         console.error("Error: can't convert HTML to HELML", e);
+//         vscode.window.showErrorMessage("Can't convert HTML to HELML!");
+//         return null;
+//     }
+// }
+
+// exports.HTMLtoHELML = HTMLtoHELML;
+
+// function HELMLtoHTML(sel_text) {
+//     try {
+//         const html_str = htmlvshelml.helml_to_html(sel_text);
+//         return html_str;
+//     } catch (e) {
+//         console.error("Error: can't convert HELML to HTML", e);
+//         vscode.window.showErrorMessage("Can't convert HELML to HTML!");
+//         return null;
+//     }
+// }
+
+// exports.HTMLtoHELML = HELMLtoHTML;
+
+
+// function HELMLtoYAML(sel_text) {
+//     try {
+//         const objArr = HELML.decode(sel_text);
+//         const code_str = toYaml(objArr, 1);
+//         return code_str;
+//     } catch (e) {
+//         console.error("Error: failed to encode HELML to YAML code", e);
+//         vscode.window.showErrorMessage('Failed to encode HELML to YAML code');
+//         return null;
+//     }
+// }
+
+// exports.HELMLtoYAML = HELMLtoYAML;
