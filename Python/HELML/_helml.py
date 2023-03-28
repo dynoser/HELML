@@ -117,7 +117,7 @@ class HELML:
     @staticmethod
     def decode(
         src_rows: Union[str, List[str], Dict[str, str]],
-        only_layer_name: Union[str, int] = 0
+        layers_list: List[Union[str, int]] = [0]
     ) -> Dict:
         """
         Decodes a HELML formatted string or list of strings into a nested dictionary.
@@ -137,7 +137,7 @@ class HELML:
         spc_ch = " "
         layer_init = 0
         layer_curr = layer_init
-        layer_name = only_layer_name if only_layer_name else layer_init
+        all_layers = set([0])
 
         # If the input is an array, use it. Otherwise, split the input string into an array.
         if isinstance(src_rows, (list, dict)):
@@ -203,6 +203,7 @@ class HELML:
             if isinstance(key, str) and key.startswith("-"):
                 if key == '-+':
                     layer_curr = value if value else (layer_curr + 1)
+                    all_layers.add(layer_curr)
                     continue
                 elif key == '--' or key == '---':
                     key = (str)(len(parent))
@@ -218,7 +219,7 @@ class HELML:
                 stack.append(key)
                 if value == '':
                     tolist.append(stack.copy())
-            elif layer_name == layer_curr:
+            elif layer_curr in layers_list:
                 # Decode the value by selected value-decoder-function
                 value = value_deco_fun(value, spc_ch)
                 # Add the key-value pair to the current dictionary
@@ -234,9 +235,22 @@ class HELML:
             if isinstance(parent, list) and HELML.is_numeric(last_key) and int(last_key) < len(parent):
                 last_key = int(last_key)
             if ((isinstance(parent, dict) and parent.get(last_key) is not None) or isinstance(last_key, int)) and isinstance(parent[last_key], dict):
-                converted = [parent[last_key].get(str(i), None) for i in range(len(parent[last_key]))]
-                parent[last_key] = converted
+                # OLD VERSION: converted = [parent[last_key].get(str(i), None) for i in range(len(parent[last_key]))]
+                # NEW VERSION:
+                converted = []
+                keys = parent[last_key].keys()
+                for i in range(len(keys)):
+                    if str(i) not in keys or parent[last_key][str(i)] is None:
+                        # Key not found
+                        break
+                    converted.append(parent[last_key][str(i)])
+                else:
+                    # overwrite the key only if the conversion was successful
+                    parent[last_key] = converted
                 
+
+        if (len(all_layers)):
+            result['_layers'] = all_layers
 
         # Return the result dictionary
         return result
