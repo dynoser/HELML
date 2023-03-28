@@ -2,7 +2,7 @@
 
 ## HELML (Header-Like Markup Language)
 
-![helml-logo](logo/icon.png)
+![helml-logo](https://raw.githubusercontent.com/dynoser/HELML/master/logo/icon.png)
 
 HELML (HEader-Like Markup Language) is a marking language similar to the HTTP headlines format.
 
