@@ -7,9 +7,9 @@ HELML (HEader-Like Markup Language) is a marking language similar to the HTTP he
 
 # Descriptions
 
-[HELML format definition (en)](https://github.com/dynoser/HELML/blob/master/README-HELML_en.md)
+[HELML format definition (en)](https://github.com/dynoser/HELML/blob/master/docs/README-HELML_en.md)
 
-[Описание формата HELML (ru)](https://github.com/dynoser/HELML/blob/master/README-HELML_ru.md)
+[Описание формата HELML (ru)](https://github.com/dynoser/HELML/blob/master/docs/README-HELML_ru.md)
 
 
 Example (animated demo in Visual Studio Code):
