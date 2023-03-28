@@ -189,7 +189,12 @@ class HELML:
             # Decode the key if it starts with an equals sign
             if isinstance(key, str) and key.startswith("-"):
                 if key == '-+':
-                    layer_curr = value if value else (layer_curr + 1)
+                    if value == None or value == '':
+                        layer_curr = (layer_curr + 1) if isinstance(layer_curr, int) else 0
+                    else:
+                        value = value.strip()
+                        layer_curr = int(value) if value.isdigit() else value
+
                     all_layers.add(layer_curr)
                     continue
                 elif key == '--' or key == '---':
@@ -222,8 +227,7 @@ class HELML:
             if isinstance(parent, list) and HELML.is_numeric(last_key) and int(last_key) < len(parent):
                 last_key = int(last_key)
             if ((isinstance(parent, dict) and parent.get(last_key) is not None) or isinstance(last_key, int)) and isinstance(parent[last_key], dict):
-                # OLD VERSION: converted = [parent[last_key].get(str(i), None) for i in range(len(parent[last_key]))]
-                # NEW VERSION:
+                # convert from dict to list if possible
                 converted = []
                 keys = parent[last_key].keys()
                 for i in range(len(keys)):

@@ -169,7 +169,12 @@ class HELML {
                     key = (typeof parent === 'object') ? Object.keys(parent).length : 0;
                 } else if (key === '-+') {
                     // Layer change
-                    layer_curr = value ? value : (layer_curr + 1);
+                    if (value == null || value === '') {
+                        layer_curr = typeof layer_curr === 'number' ? layer_curr + 1 : 0;
+                    } else {
+                        value = value.trim();
+                        layer_curr = Number.isInteger(parseInt(value)) ? parseInt(value) : value;
+                    }
                     all_layers.add(layer_curr);
                     continue;
                 } else {
@@ -194,7 +199,7 @@ class HELML {
         }
 
         if (all_layers.size > 1) {
-            result['_layers'] = all_layers;
+            result['_layers'] = Array.from(all_layers);
         }
     
         // Return the result array
