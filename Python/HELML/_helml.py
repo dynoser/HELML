@@ -23,7 +23,7 @@ class HELML:
 
     @staticmethod
     def encode(
-        arr: Union[list, dict, tuple],
+        arr: Union[list, dict, tuple, set],
         url_mode: bool = False
     ) -> str:
         """
@@ -35,8 +35,6 @@ class HELML:
         :return: Encoded HELML string.
         """
         results_arr = []
-        if not isinstance(arr, (list, dict, tuple)):
-            raise ValueError("List or dictionary required")
 
         str_imp = "~" if url_mode else "\n"
         lvl_ch = "." if url_mode else ":"
@@ -51,7 +49,7 @@ class HELML:
     
     @staticmethod
     def _encode(
-        arr: Union[dict, list, tuple],
+        arr: Union[dict, list, tuple, set],
         results_arr: list,
         level: int = 0,
         lvl_ch: str = ":",
@@ -116,7 +114,7 @@ class HELML:
 
     @staticmethod
     def decode(
-        src_rows: Union[str, List[str], Dict[str, str]],
+        src_rows: str,
         layers_list: List[Union[str, int]] = [0]
     ) -> Dict:
         """
@@ -139,25 +137,14 @@ class HELML:
         layer_curr = layer_init
         all_layers = set([0])
 
-        # If the input is an array, use it. Otherwise, split the input string into an array.
-        if isinstance(src_rows, (list, dict)):
-            if isinstance(src_rows, dict):
-                str_arr = list(src_rows)
-            else:
-                str_arr = src_rows
+        for exploder_ch in ["\n", "\r", "~"]:
+            if exploder_ch in src_rows:
+                if "~" == exploder_ch:
+                    lvl_ch = "."
+                    spc_ch = "_"
+                break
 
-        elif isinstance(src_rows, str):
-            for exploder_ch in ["\n", "\r", "~"]:
-                if exploder_ch in src_rows:
-                    if "~" == exploder_ch:
-                        lvl_ch = "."
-                        spc_ch = "_"
-                    break
-
-            str_arr = src_rows.split(exploder_ch)
-
-        else:
-            raise ValueError("Array or String required")
+        str_arr = src_rows.split(exploder_ch)
 
         # Initialize result array and stack for keeping track of current array nesting
         result = {}
@@ -249,7 +236,7 @@ class HELML:
                     parent[last_key] = converted
                 
 
-        if (len(all_layers)):
+        if (len(all_layers) > 1):
             result['_layers'] = all_layers
 
         # Return the result dictionary

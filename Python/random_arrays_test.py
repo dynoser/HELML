@@ -201,10 +201,10 @@ class TestHELML(unittest.TestCase):
 
 if __name__ == '__main__':
     t = TestHELML()
+    t.test_main_types()
     t.test_encode_decode_url_mode()
     t.test_utf8_codes()
     t.test_custom_decoder()
-    t.test_main_types()
     t.test_special_types()
     t.test_nan_type()
     t.test_rows_decode()
