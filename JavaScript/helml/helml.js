@@ -90,7 +90,7 @@ class HELML {
         }
     }
     
-    static decode(src_rows, only_layer_name = null) {
+    static decode(src_rows, layers_list = [0]) {
         // Set value decoder function as default valueDecoder or custom user function
         const valueDecoFun = HELML.CUSTOM_VALUE_DECODER === null ? HELML.valueDecoder : HELML.CUSTOM_VALUE_DECODER;
 
@@ -100,7 +100,7 @@ class HELML {
         let spc_ch = ' ';
         let layer_init = 0;
         let layer_curr = layer_init;
-        let layer_name = only_layer_name !== null ? only_layer_name : layer_init;
+        let all_layers = new Set([0]);
 
         if (typeof src_rows === 'object') {
             str_arr = HELML.iterablize(src_rows);
@@ -170,6 +170,7 @@ class HELML {
                 } else if (key === '-+') {
                     // Layer change
                     layer_curr = value ? value : (layer_curr + 1);
+                    all_layers.add(layer_curr);
                     continue;
                 } else {
                     let decoded_key = HELML.base64Udecode(key.substring(1));
@@ -184,12 +185,16 @@ class HELML {
                 parent[key] = value === '' ? [] : {};
                 stack.push(key);
                 layer_curr = layer_init;
-            } else if (layer_name == layer_curr) {
+            } else if (layers_list.includes(layer_curr)) {
                 // Decode the value by current decoder function
                 value = valueDecoFun(value, spc_ch);
                 // Add the key-value pair to the current array
                 parent[key] = value;
             }
+        }
+
+        if (all_layers.size > 1) {
+            result['_layers'] = all_layers;
         }
     
         // Return the result array
@@ -340,6 +345,8 @@ class HELML {
                 }
                 yield* entries;
               };
+        } else if (arr instanceof Set || arr instanceof Map) {
+            return Array.from(arr);
         }
         return arr;
     }
