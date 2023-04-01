@@ -56,7 +56,7 @@ class HELML {
                 results_arr.push(ident + (is_arr ? key + lvl_ch : key));
                 value = HELML.iterablize(value);
                 HELML._encode(value, results_arr, level + 1, lvl_ch, spc_ch, is_arr);
-                if (HELML.ENABLE_KEY_UPLINES && spc_ch === ' ') {
+                if (HELML.ENABLE_HASHSYMBOLS && spc_ch === ' ') {
                     results_arr.push(' '.repeat(level) + '#');
                 }
             }
@@ -343,7 +343,8 @@ class HELML {
 }
 HELML.ENABLE_BONES = true; // For encode: enable use "next"-keys like :--:
 HELML.ENABLE_SPC_IDENT = true; // For encode: add space-indentation at begin of string
-HELML.ENABLE_KEY_UPLINES = true; // For encode: add empty string before array-create-keys
+HELML.ENABLE_KEY_UPLINES = true; // For encode: adding empty string before array-create-keys
+HELML.ENABLE_HASHSYMBOLS = true; // For encode: adding # after nested-blocks
 HELML.CUSTOM_FORMAT_DECODER = null;
 HELML.CUSTOM_VALUE_DECODER = null;
 HELML.CUSTOM_VALUE_ENCODER = null;

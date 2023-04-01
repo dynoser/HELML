@@ -1,7 +1,5 @@
 "use strict";
 //import jsesc from './jsesc';
-//import phparr from './phparr';
-//import pythonarr from './pythonarr';
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
     var desc = Object.getOwnPropertyDescriptor(m, k);
@@ -29,14 +27,17 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.HELMLfromJSON = exports.HELMLtoJSON = exports.deactivate = exports.activate = void 0;
+exports.HELMLfromJSON = exports.decodeJSONtry = exports.removeJSONcomments = exports.HELMLtoJSON = exports.HELMLtoPHP = exports.HELMLtoPython = exports.deactivate = exports.activate = void 0;
 const vscode = __importStar(require("vscode"));
 const HELML_1 = __importDefault(require("./HELML"));
+const phparr_1 = __importDefault(require("./phparr"));
+const pythonarr_1 = __importDefault(require("./pythonarr"));
 function reloadConfig() {
     const config = vscode.workspace.getConfiguration('helml');
     const enableident = config.get('enableident');
     const enablebones = config.get('enablebones');
     const enableuplines = config.get('enableuplines');
+    const enablehashsym = config.get('enablehashsym');
     if (enableident !== undefined && enableident !== HELML_1.default.ENABLE_SPC_IDENT) {
         config.update('enableident', enableident, true);
         HELML_1.default.ENABLE_SPC_IDENT = enableident;
@@ -48,6 +49,10 @@ function reloadConfig() {
     if (enableuplines !== undefined && enableuplines !== HELML_1.default.ENABLE_KEY_UPLINES) {
         config.update('enableuplines', enableuplines, true);
         HELML_1.default.ENABLE_KEY_UPLINES = enableuplines;
+    }
+    if (enablehashsym !== undefined && enableuplines !== HELML_1.default.ENABLE_HASHSYMBOLS) {
+        config.update('enablehashsym', enablehashsym, true);
+        HELML_1.default.ENABLE_HASHSYMBOLS = enablehashsym;
     }
 }
 reloadConfig();
@@ -80,9 +85,9 @@ function cre_conv_fn(converter_fn) {
 function activate(context) {
     const cmdToJSON = vscode.commands.registerCommand('helml.toJSON', cre_conv_fn(HELMLtoJSON));
     const cmdFromJSON = vscode.commands.registerCommand('helml.fromJSON', cre_conv_fn(HELMLfromJSON));
+    const cmdToPHP = vscode.commands.registerCommand('helml.toPHP', cre_conv_fn(HELMLtoPHP));
+    const cmdToPython = vscode.commands.registerCommand('helml.toPython', cre_conv_fn(HELMLtoPython));
     //const cmdToJavaScript = vscode.commands.registerCommand('helml.toJavaScript', cre_conv_fn(HELMLtoJavaScript));
-    //const cmdToPHP = vscode.commands.registerCommand('helml.toPHP', cre_conv_fn(HELMLtoPHP));
-    //const cmdToPython = vscode.commands.registerCommand('helml.toPython', cre_conv_fn(HELMLtoPython));
     const cmdFromJsonDoc = vscode.commands.registerCommand('helml.fromJSONDoc', async () => {
         const editor = vscode.window.activeTextEditor;
         if (!editor) {
@@ -115,9 +120,9 @@ function activate(context) {
     context.subscriptions.push(cmdToJSON);
     context.subscriptions.push(cmdFromJsonDoc);
     context.subscriptions.push(cmdFromJSON);
+    context.subscriptions.push(cmdToPHP);
+    context.subscriptions.push(cmdToPython);
     //context.subscriptions.push(cmdToJavaSc);
-    //context.subscriptions.push(cmdToPHP);
-    //context.subscriptions.push(cmdToPython);
 }
 exports.activate = activate;
 function deactivate() { }
@@ -137,28 +142,32 @@ exports.deactivate = deactivate;
 //         return null;
 //     }
 // }
-// export function HELMLtoPython(sel_text: string): string | null {
-//     try {
-//         const objArr = HELML.decode(sel_text);
-//         const code_str = pythonarr(objArr, 1);
-//         return code_str;
-//     } catch (e) {
-//         console.error("Error: failed to encode HELML to Python code", e);
-//         vscode.window.showErrorMessage('Failed to encode HELML to Python code');
-//         return null;
-//     }
-// }
-// export function HELMLtoPHP(sel_text: string): string | null {
-//     try {
-//         const objArr = HELML.decode(sel_text);
-//         const code_str = phparr(objArr, ' ');
-//         return code_str;
-//     } catch (e) {
-//         console.error("Error: failed to encode HELML to PHP code", e);
-//         vscode.window.showErrorMessage('Failed to encode HELML to PHP code');
-//         return null;
-//     }
-// }
+function HELMLtoPython(sel_text) {
+    try {
+        const objArr = HELML_1.default.decode(sel_text);
+        const code_str = pythonarr_1.default.toPythonArr(objArr, 1);
+        return code_str;
+    }
+    catch (e) {
+        console.error("Error: failed to encode HELML to Python code", e);
+        vscode.window.showErrorMessage('Failed to encode HELML to Python code');
+        return null;
+    }
+}
+exports.HELMLtoPython = HELMLtoPython;
+function HELMLtoPHP(sel_text) {
+    try {
+        const objArr = HELML_1.default.decode(sel_text);
+        const code_str = phparr_1.default.toPHParr(objArr, 1);
+        return code_str;
+    }
+    catch (e) {
+        console.error("Error: failed to encode HELML to PHP code", e);
+        vscode.window.showErrorMessage('Failed to encode HELML to PHP code');
+        return null;
+    }
+}
+exports.HELMLtoPHP = HELMLtoPHP;
 function HELMLtoJSON(sel_text) {
     try {
         const objArr = HELML_1.default.decode(sel_text);
@@ -172,14 +181,35 @@ function HELMLtoJSON(sel_text) {
     }
 }
 exports.HELMLtoJSON = HELMLtoJSON;
+function removeJSONcomments(json_str) {
+    //return json_str;
+    const re1 = /^(\s*)\/\/.*$/gm; // remove comments from string-begin
+    const re2 = /\/\*[^*]*\*+([^\/*][^*]*\*+)*\//g; // remove comments from end
+    return json_str
+        .replace(re1, '')
+        .replace(re2, '');
+}
+exports.removeJSONcomments = removeJSONcomments;
+function decodeJSONtry(json_str) {
+    try {
+        return JSON.parse(json_str);
+    }
+    catch (e) {
+        return null;
+    }
+}
+exports.decodeJSONtry = decodeJSONtry;
 function HELMLfromJSON(sel_text) {
     try {
-        const objArr = JSON.parse(sel_text);
+        let objArr = decodeJSONtry(sel_text);
+        if (objArr === null) {
+            sel_text = removeJSONcomments(sel_text);
+            objArr = JSON.parse(sel_text);
+        }
         const helml_str = HELML_1.default.encode(objArr);
         return helml_str;
     }
     catch (e) {
-        console.error("Error: failed to decode JSON to HELML", e);
         vscode.window.showErrorMessage('Failed to decode JSON to HELML!');
         return null;
     }

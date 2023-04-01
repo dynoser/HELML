@@ -2,7 +2,7 @@
   "name": "helml",
   "displayName": "helml",
   "description": "Plugin to encode/decode HELML data",
-  "version": "0.0.8",
+  "version": "0.0.9",
   "publisher": "dynoser",
   "license": "MIT",
   "repository": {
@@ -17,15 +17,17 @@
   ],
   "icon": "images/icon.png",
   "activationEvents": [
-    "onLanguage:json"
+    "onLanguage:json",
+    "onLanguage:jsonc"
   ],
-  "main": "./dist/extension.js",
+  "main": "./out/extension.js",
   "contributes": {
     "languages": [
       {
         "id": "helml",
         "extensions": [
-          ".helml"
+          ".helml",
+          ".hml"
         ]
       }
     ],
@@ -50,10 +52,6 @@
         "title": "HELML fromJSON to NewDoc"
       },
       {
-        "command": "helml.toJavaScript",
-        "title": "HELML toJavaScript"
-      },
-      {
         "command": "helml.toPHP",
         "title": "HELML toPHP"
       },
@@ -68,17 +66,22 @@
         "helml.enableident": {
           "type": "boolean",
           "default": true,
-          "description": "HELML encoder auto-space-ident enable"
+          "description": "HELML encoder adds space indentation"
         },
         "helml.enablebones": {
           "type": "boolean",
           "default": true,
-          "description": "HELML encoder enable next-keys (bones)"
+          "description": "HELML encoder adds next-num-keys instead of numbers"
         },
         "helml.enableuplines": {
           "type": "boolean",
           "default": true,
-          "description": "HELML encoder enable empty line before create-array-keys"
+          "description": "HELML encoder adds empty line before create-array-keys"
+        },
+        "helml.enablehashsym": {
+          "type": "boolean",
+          "default": true,
+          "description": "HELML encoder adds #-symbol after nested-blocks"
         }
       }
     }
