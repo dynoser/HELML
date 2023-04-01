@@ -1,6 +1,6 @@
 import base64
 import re
-from typing import List, Dict, Union, Callable
+from typing import List, Dict, Set, Union, Callable
 
 class HELML:
 
@@ -19,7 +19,7 @@ class HELML:
     CUSTOM_VALUE_DECODER = None
     
     ENABLE_SPC_IDENT = True # For encode: add space-indentation at begin of string
-
+    ENABLE_KEY_UPLINES = True # For encode: add empty line before create-array-keys
 
     @staticmethod
     def encode(
@@ -93,29 +93,37 @@ class HELML:
                 key = "-" + HELML.base64url_encode(key)
 
             # add the appropriate number of colons to the left of the key, based on the current level
-            key = lvl_ch * level + key
+            ident = lvl_ch * level
 
              # add space-ident to the left of the key (if need)
             if HELML.ENABLE_SPC_IDENT and spc_ch == ' ':
-                key = spc_ch * level + key
+                ident = spc_ch * level + ident
 
             if isinstance(value, (list, dict, tuple)):
+                # Add empty line before create-key
+                if HELML.ENABLE_KEY_UPLINES and spc_ch == ' ':
+                    results_arr.append('')
+                
                 # if the value is a dictionary, call this function recursively and increase the level
                 if isinstance(value, (list, tuple)):
                     key += lvl_ch
-                results_arr.append(key)
+
+                results_arr.append(ident + key)
                 HELML._encode(value, results_arr, level + 1, lvl_ch, spc_ch)
+
+                if HELML.ENABLE_KEY_UPLINES and spc_ch == ' ':
+                    results_arr.append(spc_ch * level + '#')
             else:
                 # use selected value encoder function
                 value = value_enco_fun(value, spc_ch)
 
                 # add the key:value pair to the output
-                results_arr.append(key + lvl_ch + value)
+                results_arr.append(ident + key + lvl_ch + value)
 
     @staticmethod
     def decode(
         src_rows: str,
-        layers_list: List[Union[str, int]] = [0]
+        get_layers: Union[int, str, Set[Union[str, int]], List[Union[str, int]]] = [0]
     ) -> Dict:
         """
         Decodes a HELML formatted string or list of strings into a nested dictionary.
@@ -131,12 +139,25 @@ class HELML:
         # select value decoder function custom or internal default
         value_deco_fun = HELML.CUSTOM_VALUE_DECODER if HELML.CUSTOM_VALUE_DECODER is not None else HELML.valueDecoder
 
-        lvl_ch = ":"
-        spc_ch = " "
-        layer_init = 0
-        layer_curr = layer_init
-        all_layers = set([0])
+        lvl_ch: str = ":"
+        spc_ch: str = " "
+        layer_init: str = '0'
+        layer_curr:str = layer_init
+        all_layers = set([layer_init])
 
+        # Prepare layers_set from get_layers
+        # 1. Modify get_layers if needed: convert single T to array [0, T]
+        if isinstance(get_layers, (int, str)):
+            get_layers = [layer_init, get_layers]
+        # 2. Create layers_set and set all values from get_layers (str)
+        layers_set = set()
+        for i in get_layers:
+            if not isinstance(i, str):
+                i = str(i)
+            layers_set.add(i)
+
+
+        # Explode src_rows to lines
         for exploder_ch in ["\n", "\r", "~"]:
             if exploder_ch in src_rows:
                 if "~" == exploder_ch:
@@ -152,6 +173,8 @@ class HELML:
 
         # array of stack stamps for delayed conversion of dict to list
         tolist = []
+
+        min_level: int = -1
 
         # Loop through each line in the input array
         for line in str_arr:
@@ -176,10 +199,16 @@ class HELML:
             key = parts[0] if parts[0] else 0
             value = parts[1] if len(parts) > 1 else None
 
-            # Remove keys from the stack until it matches the current level
-            while len(stack) > level:
-                stack.pop()
+            # check min_level
+            if min_level < 0 or min_level > level:
+                min_level = level
+
+            extra_keys_cnt: int = len(stack) - (level - min_level)
+            if extra_keys_cnt > 0:
                 layer_curr = layer_init
+                while len(stack) and extra_keys_cnt > 0:
+                    stack.pop()
+                    extra_keys_cnt -= 1
 
             # Find the parent element in the result dictionary for the current key
             parent = result
@@ -187,17 +216,25 @@ class HELML:
                 parent = parent[parent_key]
 
             # Decode the key if it starts with an equals sign
-            if isinstance(key, str) and key.startswith("-"):
-                if key == '-+':
-                    if value == None or value == '':
-                        layer_curr = (layer_curr + 1) if isinstance(layer_curr, int) else 0
-                    else:
+            if key.startswith("-"):
+
+                if key.startswith('-+'):
+                    # Layer control keys
+                    if value != None:
                         value = value.strip()
-                        layer_curr = int(value) if value.isdigit() else value
+                    if key == '-++':
+                        layer_init = value if value else '0'
+                        layer_curr = layer_init
+                    elif key == '-+':
+                        if value == None:
+                            layer_curr = str(int(layer_curr) + 1) if layer_curr.isdigit() else layer_init
+                        else:
+                            layer_curr = layer_init if value == '' else value
 
                     all_layers.add(layer_curr)
                     continue
                 elif key == '--' or key == '---':
+                    # Next Num keys
                     key = (str)(len(parent))
                 else:
                     key = HELML.base64url_decode(key[1:])
@@ -211,7 +248,7 @@ class HELML:
                 stack.append(key)
                 if value == '':
                     tolist.append(stack.copy())
-            elif layer_curr in layers_list:
+            elif layer_curr in layers_set:
                 # Decode the value by selected value-decoder-function
                 value = value_deco_fun(value, spc_ch)
                 # Add the key-value pair to the current dictionary

@@ -15,34 +15,36 @@
   "categories": [
     "Other"
   ],
-	"icon": "images/icon.png",
-	"activationEvents": [
+  "icon": "images/icon.png",
+  "activationEvents": [
     "onLanguage:json"
-	],
-	"main": "./out/extension.js",
+  ],
+  "main": "./dist/extension.js",
   "contributes": {
     "languages": [
       {
-          "id": "helml",
-          "extensions": [".helml"]
+        "id": "helml",
+        "extensions": [
+          ".helml"
+        ]
       }
     ],
     "grammars": [
       {
-          "language": "helml",
-          "scopeName": "source.helml",
-          "path": "./syntaxes/helml.tmLanguage.json"
+        "language": "helml",
+        "scopeName": "source.helml",
+        "path": "./syntaxes/helml.tmLanguage.json"
       }
     ],
     "commands": [
       {
-				"command": "helml.toJSON",
-				"title": "HELML toJSON"
-			},
-			{
-				"command": "helml.fromJSON",
-				"title": "HELML fromJSON"
-			},
+        "command": "helml.toJSON",
+        "title": "HELML toJSON"
+      },
+      {
+        "command": "helml.fromJSON",
+        "title": "HELML fromJSON"
+      },
       {
         "command": "helml.fromJSONDoc",
         "title": "HELML fromJSON to NewDoc"
@@ -72,23 +74,18 @@
           "type": "boolean",
           "default": true,
           "description": "HELML encoder enable next-keys (bones)"
+        },
+        "helml.enableuplines": {
+          "type": "boolean",
+          "default": true,
+          "description": "HELML encoder enable empty line before create-array-keys"
         }
       }
     }
   },
-  "scripts": {
-    "lint": "eslint .",
-    "pretest": "npm run lint"
-  },
+  "scripts": {},
   "devDependencies": {
-    "@types/vscode": "^1.65.0",
-    "@types/glob": "^7.2.0",
-    "@types/mocha": "^9.1.0",
-    "@types/node": "^14.x",
-    "eslint": "^8.9.0",
-    "glob": "^7.2.0",
-    "mocha": "^9.2.1",
-    "typescript": "^4.5.5",
-    "@vscode/test-electron": "^2.1.2"
+    "@types/node": "^14.18.42",
+    "@types/vscode": "^1.65.0"
   }
 }

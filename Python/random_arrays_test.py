@@ -164,6 +164,27 @@ class TestHELML(unittest.TestCase):
         second_dec = HELML.decode(encoded_data)
         assert first_dec == second_dec, f"Error URL in mode: first_dec {first_dec}, second_dec {second_dec}"
 
+    def test_min_level(self):
+        '''This test allows us to check that we can add extra colons on the left.'''
+
+        h_ml = """
+            ::A:  T
+            ::B:  F
+            ::C:
+            :::--:  T
+            :::--:  F
+            ::D:  N
+            """
+        decoded_data = HELML.decode(h_ml)
+        expected_data = {
+            "A": True,
+            "B": False,
+            "C": [ True, False ],
+            "D": None
+        }
+        assert decoded_data == expected_data, f"Error: decoded data {decoded_data}, expected data {expected_data}"
+
+
     def test_nan_type(self):
         h_ml = 'A:  NAN'
         decoded_data = HELML.decode(h_ml)
@@ -198,9 +219,96 @@ class TestHELML(unittest.TestCase):
         expected_data = {"A": "2021-10-30 16:20:00"}
         assert decoded_data == expected_data, f"Error: decoded data {decoded_data}, expected data {expected_data}"
 
+    def test_layer_next(self):
+        h_ml = """
+            A:  T
+            B:  F
+            C:  N
+            D: Americano with milk
+            -+
+            D: Руссиано с молоком
+            -+
+            D: Deutschiano mit Milch
+            -+:
+            F:  F
+            """
+        decoded_data = HELML.decode(h_ml)
+        expected_data = {
+            "A": True,
+            "B": False,
+            "C": None,
+            "D": "Americano with milk",
+            "F": False,
+            '_layers': set(['0', '1', '2'])
+        }
+        assert decoded_data == expected_data, f"Error: decoded data {decoded_data}, expected data {expected_data}"
+
+        decoded_data = HELML.decode(h_ml, 1)
+        expected_data = {
+            "A": True,
+            "B": False,
+            "C": None,
+            "D": "Руссиано с молоком",
+            "F": False,
+            '_layers': set(['0', '1', '2'])
+        }
+        assert decoded_data == expected_data, f"Error: decoded data {decoded_data}, expected data {expected_data}"
+
+        decoded_data = HELML.decode(h_ml, [0, 2])
+        expected_data = {
+            "A": True,
+            "B": False,
+            "C": None,
+            "D": "Deutschiano mit Milch",
+            "F": False,
+            '_layers': set(['0', '1', '2'])
+        }
+        assert decoded_data == expected_data, f"Error: decoded data {decoded_data}, expected data {expected_data}"
+
+    def test_layer_init(self):
+        h_ml = """
+            A:  T
+            B:  F
+            C:  N
+            D: Americano with milk
+            -++: ru
+            D: Руссиано с молоком
+            Sub:
+            :--:  1
+            :--:  2
+            -+: de
+            D: Deutschiano mit Milch
+            -++
+            F:  F
+            """
+        decoded_data = HELML.decode(h_ml)
+        expected_data = {
+            "A": True,
+            "B": False,
+            "C": None,
+            "D": "Americano with milk",
+            "Sub": [],
+            "F": False,
+            '_layers': set(['0', 'ru', 'de'])
+        }
+        assert decoded_data == expected_data, f"Error: decoded data {decoded_data}, expected data {expected_data}"
+        decoded_data = HELML.decode(h_ml, 'ru')
+        expected_data = {
+            "A": True,
+            "B": False,
+            "C": None,
+            "D": "Руссиано с молоком",
+            "Sub": [1, 2],
+            "F": False,
+            '_layers': set(['0', 'ru', 'de'])
+        }
+        assert decoded_data == expected_data, f"Error: decoded data {decoded_data}, expected data {expected_data}"
+
+
 
 if __name__ == '__main__':
     t = TestHELML()
+    t.test_layer_next()
     t.test_main_types()
     t.test_encode_decode_url_mode()
     t.test_utf8_codes()
