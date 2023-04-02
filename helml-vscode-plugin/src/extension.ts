@@ -5,8 +5,12 @@ import HELML from './HELML';
 import phparr from './phparr';
 import pythonarr from './pythonarr';
 
-function reloadConfig() {
+let HELMLLayersList: string[] = ['0'];
+
+function reloadConfig(event: vscode.ConfigurationChangeEvent | null = null) {
     const config = vscode.workspace.getConfiguration('helml');
+    const extname = 'helml';
+
     const enableident = config.get<boolean>('enableident');
     const enablebones = config.get<boolean>('enablebones');
     const enableuplines = config.get<boolean>('enableuplines');
@@ -31,14 +35,23 @@ function reloadConfig() {
         config.update('enablehashsym', enablehashsym, true);
         HELML.ENABLE_HASHSYMBOLS = enablehashsym;
     }
+
+    if (event === null || event.affectsConfiguration(extname + '.getlayers')) {
+        const getlayers = config.get<string>('getlayers');
+        if (getlayers) {
+            HELMLLayersList = [];
+            const layers = getlayers.split(',');
+            layers.forEach(layer => HELMLLayersList.push(layer.trim()));
+        }
+    }
 }
 
 reloadConfig();
 
 // Auto-update config on changes
 vscode.workspace.onDidChangeConfiguration(event => {
-    if (event.affectsConfiguration('helml.enableident') || event.affectsConfiguration('helml.enablebones')) {
-        reloadConfig();
+    if (event.affectsConfiguration('helml')) {
+        reloadConfig(event);
     }
 });
 
@@ -137,7 +150,7 @@ export function deactivate() { }
 
 export function HELMLtoPython(sel_text: string): string | null {
     try {
-        const objArr = HELML.decode(sel_text);
+        const objArr = HELML.decode(sel_text, HELMLLayersList);
         const code_str = pythonarr.toPythonArr(objArr, 1);
         return code_str;
     } catch (e) {
@@ -149,7 +162,7 @@ export function HELMLtoPython(sel_text: string): string | null {
 
 export function HELMLtoPHP(sel_text: string): string | null {
     try {
-        const objArr = HELML.decode(sel_text);
+        const objArr = HELML.decode(sel_text, HELMLLayersList);
         const code_str = phparr.toPHParr(objArr, 1);
         return code_str;
     } catch (e) {
@@ -161,7 +174,7 @@ export function HELMLtoPHP(sel_text: string): string | null {
 
 export function HELMLtoJSON(sel_text: string): string | null {
     try {
-        const objArr = HELML.decode(sel_text);
+        const objArr = HELML.decode(sel_text, HELMLLayersList);
         const json_str = JSON.stringify(objArr, null, '\t');
         return json_str;
     } catch (e) {
@@ -190,6 +203,15 @@ export function decodeJSONtry(json_str: string) {
 
 export function HELMLfromJSON(sel_text: string): string | null {
     try {
+        // check selection text is from middle of the JSON
+        sel_text = sel_text.trim();
+        if (sel_text.startsWith('"')) {
+            sel_text = '{' + sel_text;
+            if (sel_text.endsWith(",")) {
+                sel_text = sel_text.slice(0, -1);
+            }
+            sel_text += '}';
+        }
         let objArr = decodeJSONtry(sel_text);
         if (objArr === null) {
             sel_text = removeJSONcomments(sel_text);

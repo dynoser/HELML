@@ -1,18 +1,22 @@
 # HELML
 
-HELML is a vscode extension to encode/decode HELML data. It can encode multi-lines-selection between JSON and HELML.
+ - HELML Syntax Highlighting
+ - Convert between JSON and HELML formats
+ - [HELML format definition (en)](https://github.com/dynoser/HELML/blob/master/README-HELML_en.md)
+ - [HELML format definition (ru)](https://github.com/dynoser/HELML/blob/master/README-HELML_en.md)
 
 ## Features
 
-You can select text and encode/decode to/from HELML. Search in command pallete for HELML.
+ - convert selection from JSON to HELML
+ - convert selection from HELML to JSON
+ - convert from JSON to HELML New Document
 
-Press F1 and type "HELML", then select "HELML fromJSON" or "HELML toJSON"
+Press F1 and type "HELML", then select "HELML toJSON", "HELML fromJSON", "HELML fromJSON NewDoc"
 
-![Demo](https://i.imgur.com/WyGbJmO.gif)
+![Convert From/To JSON](https://i.imgur.com/bBCcYwm.gif)
 
-## Release Notes
+You can find these items by right-clicking on the selection:
 
-### 0.0.1
+![HELML Syntax highlighting](https://i.imgur.com/WVYC9wQ.gif)
 
-Initial release of HELML
 

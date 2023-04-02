@@ -1,4 +1,4 @@
-# HELML
+# HELML Multilayering
 
 ## HELML (Header-Like Markup Language)
 
@@ -7,28 +7,30 @@
 Its addition to [HELML format description](https://github.com/dynoser/HELML/blob/master/docs/README-HELML_en.md)
 
 
-# Multidimensional Arrays
+# Multilayer Arrays
 
-The concept of multidimensionality allows for binding values to different layers of an array and, when reading,
-requesting a certain list of "layers" whose values will be combined into the final array.
+The concept of multilayer arrays allows you to bind values to different layers of the array, so that when
+when reading, it was possible to request the choice of layers, the values of which will be combined into the final array.
 
-This is convenient when you need to obtain arrays with insignificant changes that depend on some parameters.
+This is useful when you need to get arrays with minor changes depending on the read parameters.
 
-For example, we create a file with a description of program settings.
-We want some settings to be replaced with some other ones in debug mode of the program.
-We set these alternative settings for a layer that we call, for example, "dbg".
-Next, when extracting the configuration, we specify that we want to extract the main layer and the "dbg" layer.
-As a result, we will get an array in which values from the "dbg" layer will be "overlayed" on top of the main layer.
+## Example: Debug options
+For example, we create a file with a description of the settings for some program, and we want some settings to be
+replaced by others in debug mode. These alternate settings can be linked to a separate layer, we'll call it "dbg".
+Next, when reading the configuration, we will indicate whether to overlay the "dbg" layer on top of the main layer.
+As a result, by requesting the overlay of the "dbg" layer, we will read the array in which, on top of the main layer
+those values that will be taken from the "dbg" layer will be "imposed".
 
-Another example.
-Suppose the program settings include a parameter hello with a value of "Hello World!".
-We want this value to be changed to "Здравствуй мир!" when using the Russian language.
-In the concept of multidimensionality, we simply add this value to a layer called, for example, "ru".
-When reading the settings file, we will additionally specify the layer with the name of the current language for reading.
-If the language is "ru", and we request an additional layer "ru" when reading, then we will get an array as a result,
-in which the hello parameter will have a value of "Здравствуй мир!".
-This is because a layer with the name "ru" will be overlaid on top of the original layer, in which the value of the hello parameter is different.
+## Example: multilingual
+Let's say that among the program settings there is a hello parameter with the value "Hello World!".
+We want this value to change to "Здравствуй мир!" when using the Russian language, and we also want to be able to set
+this value for any language in general. In the concept of layering, we add this value to the layer, which we will call "ru".
+Further, when reading the array, we will specify a layer with the name of the current language for overlay.
+In the case of the Russian language, this name will be "ru", and when reading the array, we will get an array,
+in which the hello parameter will have the value "Здравствуй мир!", because the layer values are "ru"
+will be superimposed on top of the main layer.
 
+## Example: many layers
 By combining the above examples, we can additionally request the "ru" and "dbg" layers to obtain an array as output,
 in which the values will be changed according to the "ru" and "dbg" layers.
 
@@ -37,34 +39,34 @@ Then, when we request a list of any layers, we get a union of the corresponding 
 If the same parameter is set in multiple layers, we will get the most recent value.
 Each subsequent value replaces the previous one, and we always get the latest value from all options.
 
-# Multidimensionality in the HELML Language
+# Multilayering in the HELML Language
 
-Layers of a HELML array can be thought of as arrays with the same structure but different values.
+Multiple layers of a HELML array are represented as arrays with the same structure but different values.
 
-When requesting any layer or combination of layers, we will get the same structure of nested arrays as a result.
+When requesting any layer or combination of layers, we get the same array nesting structure as a result,
+however, the values in them will be the result of combining the values from all the specified layers.
 
 Arrays are considered not as values, but as a structure, a framework.
 
-If we request a non-existent layer, we will get an empty structure of arrays (a framework with no values).
+If we request non-existing layers, we will get an empty structure (a framework in which there will be no values).
 
 If we request existing layers, we will get a structure in which values corresponding to these layers will be inserted.
 
-By existing layers, we mean those layers that are associated with some values.
+By existing layers, we mean those layers that have values associated with them.
 
 # Implementation Features
 
-I. Layer 0
+I. Layer `0`
 
- - Layer 0 is the "default" layer.
- - When layering is not used, layer 0 is actually used.
- - When an array is described without specifying layers, all its elements are tied to layer 0.
- - When reading an array without specifying layers, layer 0 is read.
+ - Layer `0` is the "default" layer.
+ - When layering is not used, layer `0` is actually used.
+ - When an array is described without specifying layers, all its elements are tied to layer `0`.
+ - When reading an array without specifying layers, layer `0` is read.
 
 II. Layer names
-
- - The name of a layer can be either an integer or a non-empty string.
- - If the layer name is a number, transitioning to the "next layer" will increase that number by 1.
- - If the layer name is not a number, transitioning to the "next layer" will return to layer 0.
+ - The layer name can be either an number or a non-empty string.
+ - If the layer name is a number, then it is possible to go to the "next layer" using the `-+` key.
+ - If the layer name is non-number, then using the `-+` key will jump to the "default layer".
 
 III. Layer specification key
 

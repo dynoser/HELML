@@ -23,6 +23,15 @@ var __importStar = (this && this.__importStar) || function (mod) {
     __setModuleDefault(result, mod);
     return result;
 };
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
@@ -32,8 +41,10 @@ const vscode = __importStar(require("vscode"));
 const HELML_1 = __importDefault(require("./HELML"));
 const phparr_1 = __importDefault(require("./phparr"));
 const pythonarr_1 = __importDefault(require("./pythonarr"));
-function reloadConfig() {
+let HELMLLayersList = ['0'];
+function reloadConfig(event = null) {
     const config = vscode.workspace.getConfiguration('helml');
+    const extname = 'helml';
     const enableident = config.get('enableident');
     const enablebones = config.get('enablebones');
     const enableuplines = config.get('enableuplines');
@@ -54,12 +65,20 @@ function reloadConfig() {
         config.update('enablehashsym', enablehashsym, true);
         HELML_1.default.ENABLE_HASHSYMBOLS = enablehashsym;
     }
+    if (event === null || event.affectsConfiguration(extname + '.getlayers')) {
+        const getlayers = config.get('getlayers');
+        if (getlayers) {
+            HELMLLayersList = [];
+            const layers = getlayers.split(',');
+            layers.forEach(layer => HELMLLayersList.push(layer.trim()));
+        }
+    }
 }
 reloadConfig();
 // Auto-update config on changes
 vscode.workspace.onDidChangeConfiguration(event => {
-    if (event.affectsConfiguration('helml.enableident') || event.affectsConfiguration('helml.enablebones')) {
-        reloadConfig();
+    if (event.affectsConfiguration('helml')) {
+        reloadConfig(event);
     }
 });
 function cre_conv_fn(converter_fn) {
@@ -88,7 +107,7 @@ function activate(context) {
     const cmdToPHP = vscode.commands.registerCommand('helml.toPHP', cre_conv_fn(HELMLtoPHP));
     const cmdToPython = vscode.commands.registerCommand('helml.toPython', cre_conv_fn(HELMLtoPython));
     //const cmdToJavaScript = vscode.commands.registerCommand('helml.toJavaScript', cre_conv_fn(HELMLtoJavaScript));
-    const cmdFromJsonDoc = vscode.commands.registerCommand('helml.fromJSONDoc', async () => {
+    const cmdFromJsonDoc = vscode.commands.registerCommand('helml.fromJSONDoc', () => __awaiter(this, void 0, void 0, function* () {
         const editor = vscode.window.activeTextEditor;
         if (!editor) {
             return;
@@ -110,13 +129,13 @@ function activate(context) {
         const convertedText = HELMLfromJSON(sel_text);
         if (convertedText) {
             let fileName = document.fileName;
-            newFile = await vscode.workspace.openTextDocument({
+            newFile = yield vscode.workspace.openTextDocument({
                 content: convertedText,
                 language: 'helml',
             });
         }
         vscode.window.showTextDocument(newFile);
-    });
+    }));
     context.subscriptions.push(cmdToJSON);
     context.subscriptions.push(cmdFromJsonDoc);
     context.subscriptions.push(cmdFromJSON);
@@ -144,7 +163,7 @@ exports.deactivate = deactivate;
 // }
 function HELMLtoPython(sel_text) {
     try {
-        const objArr = HELML_1.default.decode(sel_text);
+        const objArr = HELML_1.default.decode(sel_text, HELMLLayersList);
         const code_str = pythonarr_1.default.toPythonArr(objArr, 1);
         return code_str;
     }
@@ -157,7 +176,7 @@ function HELMLtoPython(sel_text) {
 exports.HELMLtoPython = HELMLtoPython;
 function HELMLtoPHP(sel_text) {
     try {
-        const objArr = HELML_1.default.decode(sel_text);
+        const objArr = HELML_1.default.decode(sel_text, HELMLLayersList);
         const code_str = phparr_1.default.toPHParr(objArr, 1);
         return code_str;
     }
@@ -170,7 +189,7 @@ function HELMLtoPHP(sel_text) {
 exports.HELMLtoPHP = HELMLtoPHP;
 function HELMLtoJSON(sel_text) {
     try {
-        const objArr = HELML_1.default.decode(sel_text);
+        const objArr = HELML_1.default.decode(sel_text, HELMLLayersList);
         const json_str = JSON.stringify(objArr, null, '\t');
         return json_str;
     }
@@ -201,6 +220,15 @@ function decodeJSONtry(json_str) {
 exports.decodeJSONtry = decodeJSONtry;
 function HELMLfromJSON(sel_text) {
     try {
+        // check selection text is from middle of the JSON
+        sel_text = sel_text.trim();
+        if (sel_text.startsWith('"')) {
+            sel_text = '{' + sel_text;
+            if (sel_text.endsWith(",")) {
+                sel_text = sel_text.slice(0, -1);
+            }
+            sel_text += '}';
+        }
         let objArr = decodeJSONtry(sel_text);
         if (objArr === null) {
             sel_text = removeJSONcomments(sel_text);

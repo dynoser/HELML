@@ -25,10 +25,7 @@
     "languages": [
       {
         "id": "helml",
-        "extensions": [
-          ".helml",
-          ".hml"
-        ]
+        "extensions": [".helml"]
       }
     ],
     "grammars": [
@@ -49,7 +46,7 @@
       },
       {
         "command": "helml.fromJSONDoc",
-        "title": "HELML fromJSON to NewDoc"
+        "title": "HELML fromJSON NewDoc"
       },
       {
         "command": "helml.toPHP",
@@ -60,28 +57,46 @@
         "title": "HELML toPython"
       }
     ],
+    "menus": {
+      "editor/context": [
+        {
+          "command": "helml.fromJSONDoc"
+        },
+        {
+          "command": "helml.fromJSON"
+        },
+        {
+          "command": "helml.toJSON"
+        }
+      ]
+    },
     "configuration": {
       "title": "HELML Config",
       "properties": {
         "helml.enableident": {
           "type": "boolean",
           "default": true,
-          "description": "HELML encoder adds space indentation"
+          "description": "HELML encoder will add left-spaces indentation"
         },
         "helml.enablebones": {
           "type": "boolean",
           "default": true,
-          "description": "HELML encoder adds next-num-keys instead of numbers"
+          "markdownDescription": "HELML encoder will add next-num-keys (like `:--:`) instead of numbers"
         },
         "helml.enableuplines": {
           "type": "boolean",
           "default": true,
-          "description": "HELML encoder adds empty line before create-array-keys"
+          "description": "HELML encoder will add empty line before create-array-keys"
         },
         "helml.enablehashsym": {
           "type": "boolean",
           "default": true,
-          "description": "HELML encoder adds #-symbol after nested-blocks"
+          "markdownDescription": "HELML encoder will add `#`-symbol after nested-blocks"
+        },
+        "helml.getlayers": {
+          "type": "string",
+          "default": "0",
+          "description": "HELML decoder layers list (comma separated)"
         }
       }
     }

@@ -14,7 +14,7 @@ HELML (HEader-Like Markup Language) is a marking language similar to the HTTP he
 
 Example (animated demo in Visual Studio Code):
 
-![Demo](https://i.imgur.com/WyGbJmO.gif)
+![Convert From/To JSON](https://i.imgur.com/bBCcYwm.gif)
 
 HELML-encoded Array:
 ```console
