@@ -1,6 +1,6 @@
 {
   "name": "helml",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "description": "encode/decode HELML data",
   "main": "helml.js",
   "type": "module",
@@ -23,5 +23,8 @@
   "bugs": {
     "url": "https://github.com/dynoser/HELML/issues"
   },
-  "homepage": "https://github.com/dynoser/HELML/tree/master#readme"
+  "homepage": "https://github.com/dynoser/HELML/tree/master#readme",
+  "devDependencies": {
+    "@types/node": "^18.15.11"
+  }
 }
