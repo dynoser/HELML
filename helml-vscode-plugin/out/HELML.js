@@ -293,7 +293,15 @@ class HELML {
     }
     static base64Uencode(str) {
         let base64;
-        base64 = Buffer.from(str, 'binary').toString('base64');
+        if (typeof Buffer !== 'undefined') {
+            base64 = Buffer.from(str, 'binary').toString('base64');
+        }
+        else if (typeof window !== 'undefined' && typeof window.btoa === 'function') {
+            base64 = window.btoa(str);
+        }
+        else {
+            throw new Error('Not found me base64-encoder');
+        }
         return base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
     }
     static base64Udecode(str) {
@@ -302,8 +310,17 @@ class HELML {
             str += '=';
         }
         try {
-            const buffer = Buffer.from(str, 'base64');
-            return buffer.toString('binary');
+            let decoded;
+            if (typeof Buffer !== 'undefined') {
+                decoded = Buffer.from(str, 'base64').toString('binary');
+            }
+            else if (typeof window !== 'undefined' && typeof window.atob === 'function') {
+                decoded = window.atob(str);
+            }
+            else {
+                throw new Error('Not found base64-decoder');
+            }
+            return decoded;
         }
         catch (e) {
             return null;

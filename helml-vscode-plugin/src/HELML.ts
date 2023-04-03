@@ -1,3 +1,7 @@
+import type { fakeWindow } from './window.d.ts';
+
+declare var window: fakeWindow;
+
 export default class HELML {
     static ENABLE_BONES: boolean = true; // For encode: enable use "next"-keys like :--:
     static ENABLE_SPC_IDENT: boolean = true; // For encode: add space-indentation at begin of string
@@ -323,7 +327,14 @@ export default class HELML {
 
     static base64Uencode(str: string): string {
         let base64: string;
-        base64 = Buffer.from(str, 'binary').toString('base64');    
+
+        if (typeof Buffer !== 'undefined') {
+            base64 = Buffer.from(str, 'binary').toString('base64');
+        } else if (typeof window !== 'undefined' && typeof window.btoa === 'function') {
+            base64 = window.btoa(str);
+        } else {
+            throw new Error('Not found me base64-encoder');
+        }
         return base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
     }
             
@@ -334,8 +345,15 @@ export default class HELML {
         }
     
         try {
-            const buffer = Buffer.from(str, 'base64');
-            return buffer.toString('binary');
+            let decoded: string;
+            if (typeof Buffer !== 'undefined') {
+                decoded = Buffer.from(str, 'base64').toString('binary');
+            } else if (typeof window !== 'undefined' && typeof window.atob === 'function') {
+                decoded = window.atob(str);
+            } else {
+                throw new Error('Not found base64-decoder');
+            }
+            return decoded;
         } catch (e) {
             return null;
         }

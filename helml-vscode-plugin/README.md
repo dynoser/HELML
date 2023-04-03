@@ -2,8 +2,8 @@
 
  - HELML Syntax Highlighting
  - Convert between JSON and HELML formats
- - [HELML format definition (en)](https://github.com/dynoser/HELML/blob/master/README-HELML_en.md)
- - [HELML format definition (ru)](https://github.com/dynoser/HELML/blob/master/README-HELML_en.md)
+ - [HELML format definition (en)](https://github.com/dynoser/HELML/blob/master/docs/README-HELML_en.md)
+ - [HELML format definition (ru)](https://github.com/dynoser/HELML/blob/master/docs/README-HELML_ru.md)
 
 ## Features
 
