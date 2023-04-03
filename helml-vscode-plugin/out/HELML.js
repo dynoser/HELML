@@ -1,5 +1,3 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
 class HELML {
     static encode(arr, url_mode = false) {
         let results_arr = [];
@@ -372,4 +370,4 @@ HELML.SPEC_TYPE_VALUES = {
     'INF': Infinity,
     'NIF': -Infinity
 };
-exports.default = HELML;
+export default HELML;

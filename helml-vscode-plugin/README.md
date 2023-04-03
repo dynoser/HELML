@@ -1,17 +1,19 @@
 # HELML
 
- - HELML Syntax Highlighting
- - Convert between JSON and HELML formats
  - [HELML format definition (en)](https://github.com/dynoser/HELML/blob/master/docs/README-HELML_en.md)
  - [HELML format definition (ru)](https://github.com/dynoser/HELML/blob/master/docs/README-HELML_ru.md)
 
 ## Features
 
- - convert selection from JSON to HELML
- - convert selection from HELML to JSON
- - convert from JSON to HELML New Document
+ - HELML Syntax Highlighting
+ - Convert between JSON and HELML formats:
+   - convert Selection from JSON to HELML
+   - convert Selection to JSON from HELML
+   - convert from JSON to HELML New Document
+ - Convert HELML Selection to PHP-array
+ - Convert HELML Selection to Python-array
 
-Press F1 and type "HELML", then select "HELML toJSON", "HELML fromJSON", "HELML fromJSON NewDoc"
+Press F1 and type "HELML", then select "HELML toJSON", "HELML fromJSON", etc.
 
 ![Convert From/To JSON](https://i.imgur.com/bBCcYwm.gif)
 

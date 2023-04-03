@@ -1,8 +1,9 @@
 {
   "name": "helml",
-  "version": "1.0.3",
+  "version": "1.0.7",
   "description": "encode/decode HELML data",
   "main": "helml.js",
+  "type": "module",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },

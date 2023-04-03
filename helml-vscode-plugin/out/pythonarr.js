@@ -1,6 +1,4 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-class pythonarr {
+export default class pythonarr {
     static toPythonArr(data, indentLevel = 0) {
         const indent = ' '.repeat(indentLevel * 2);
         if (Array.isArray(data)) {
@@ -36,4 +34,3 @@ class pythonarr {
         return JSON.stringify(data);
     }
 }
-exports.default = pythonarr;
