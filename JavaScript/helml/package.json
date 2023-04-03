@@ -1,6 +1,6 @@
 {
   "name": "helml",
-  "version": "1.0.8",
+  "version": "1.0.9",
   "description": "encode/decode HELML data",
   "main": "helml.js",
   "type": "module",
