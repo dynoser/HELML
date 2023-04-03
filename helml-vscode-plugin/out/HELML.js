@@ -29,7 +29,7 @@ class HELML {
             if (is_list && HELML.ENABLE_BONES) {
                 key = '--';
             }
-            else {
+            else if (!is_list) {
                 // encode key in base64url if it contains unwanted characters
                 let fc = key.charAt(0);
                 let lc = key.charAt(key.length - 1);
@@ -187,19 +187,17 @@ class HELML {
     }
     static valueEncoder(value, spc_ch = ' ') {
         if (typeof value === 'string') {
-            let need_encode, reg_str;
+            let need_encode = value.indexOf('~') !== -1;
+            let reg_str;
             if ('_' === spc_ch) {
-                // for url-mode
-                need_encode = (value.indexOf('~') !== -1);
-                // ASCII visible chars
+                // for url-mode: ASCII visible chars only
                 reg_str = /^[ -~]+$/;
             }
             else {
-                need_encode = false;
                 // utf-8 visible chars
                 reg_str = /^[\u0020-\u007E\u00A0-\u00FF\u0100-\u017F\u0180-\u024F\u1E00-\u1EFF]+$/;
             }
-            if (need_encode || !reg_str.test(value) || ('_' === spc_ch && value.indexOf('~') !== -1)) {
+            if (need_encode || !reg_str.test(value)) {
                 // if the string contains special characters, encode it in base64
                 return "-" + HELML.base64Uencode(value);
             }
