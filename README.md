@@ -3,65 +3,48 @@
 
 # HELML (Header-Like Markup Language)
 
-HELML (HEader-Like Markup Language) is a marking language similar to the HTTP headlines format.
+* [HELML format definition (en)](https://github.com/dynoser/HELML/blob/master/docs/README-HELML_en.md)
+* [Описание формата HELML (ru)](https://github.com/dynoser/HELML/blob/master/docs/README-HELML_ru.md)
 
-# Descriptions
-
-[HELML format definition (en)](https://github.com/dynoser/HELML/blob/master/docs/README-HELML_en.md)
-
-[Описание формата HELML (ru)](https://github.com/dynoser/HELML/blob/master/docs/README-HELML_ru.md)
-
-
-Example (animated demo in Visual Studio Code):
+Example (animated demo from Visual Studio Code plugin):
 
 ![Convert From/To JSON](https://i.imgur.com/bBCcYwm.gif)
 
-HELML-encoded Array:
-```console
-A: 123
-B
-:X: 456
-:Y: 789
-:Z
-::One: 1
-::Two: 2
-:C: 888
-D: 111
-```
-The same array in JSON:
-```json
-{
-    "A": "123",
-    "B": {
-        "X": "456",
-        "Y": "789",
-        "Z": {
-            "One": "1",
-            "Two": "2"
-        }
-        "C": "888"
-    },
-    "D": "111"
-}
-```
-
-
-
 # Implementations
+
+### Try online plugin "helml" for vscode.dev
+
+  1. Go to [vscode.dev](https://vscode.dev)
+  2. Select "extensions" and search "helml"
+  3. Select "helml" extension and press "Install"
+  4. See more in [Marketplace link](https://marketplace.visualstudio.com/items?itemName=dynoser.helml)
+
+### Plugin for native Visual Studio Code
+
+  1. Install and run Visual Studio Code
+  2. Select "extenstions" and search "helml"
+  3. Select "helml" extension and press "Install"
+  4. Enjoy!
+
+### VsCode plugin source
+
+  - [VsCode plugin (source code)](https://github.com/dynoser/HELML/tree/master/helml-vscode-plugin)
+
+### TypeScript and JavaScript
+
+  - [TypeScript HELML implementation](https://github.com/dynoser/HELML/tree/master/JavaScript/helml/src)
+  - [JavaScript HELML implementation](https://github.com/dynoser/HELML/tree/master/JavaScript/helml)
+  - NodeJS package: [npm install helml](https://www.npmjs.com/package/helml)
+
 
 ### Python
 
-[Python package](https://github.com/dynoser/HELML/tree/master/Python)
+  - [Python HELML package](https://github.com/dynoser/HELML/tree/master/Python)
+  - pip package: [pip install helml](https://pypi.org/project/HELML/)
 
 ### PHP
 
-[PHP code](https://github.com/dynoser/phpHELML/)
-
-### JavaScript
-
-[JavaScript code](https://github.com/dynoser/HELML/tree/master/JavaScript)
+   - [PHP class HELML](https://github.com/dynoser/phpHELML/) source
+   - Composer package: [composer require dynoser/helml](https://packagist.org/packages/dynoser/helml)
 
 
-### Visual Studio Code extention
-
-[VsCode ext](https://github.com/dynoser/HELML/tree/master/helml-vscode-plugin)
