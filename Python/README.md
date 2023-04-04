@@ -2,8 +2,11 @@
 
 ![helml-logo](https://github.com/dynoser/HELML/raw/master/logo/icon.png)
 
+## Python package
+
 * [HELML format definition (en)](https://github.com/dynoser/HELML/blob/master/docs/README-HELML_en.md)
 * [Описание формата HELML (ru)](https://github.com/dynoser/HELML/blob/master/docs/README-HELML_ru.md)
+
 
 ## Install
 To install HELML, simply use pip:
