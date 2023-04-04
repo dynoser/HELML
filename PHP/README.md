@@ -59,7 +59,7 @@ Encode and decode data arrays to/from HELML.
 
 ### **HELML::encode**($arr, $url_mode=False)
 
-Encode a data structure (list, dict, or tuple) into a HELML string.
+Encode a array into a HELML string.
 
 - **$arr** The input data array to be encoded.
 - **$url_mode** (bool, optional): A boolean indicating if the URL mode should be used. Defaults to False.
