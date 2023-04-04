@@ -19,11 +19,13 @@ class HELML:
     CUSTOM_VALUE_DECODER = None
     
     ENABLE_SPC_IDENT = True # For encode: add space-indentation at begin of string
+    ENABLE_BONES = True # For encode: enable use "next"-keys like :--:
     ENABLE_KEY_UPLINES = True # For encode: add empty line before create-array-keys
+    ENABLE_HASHSYMBOLS = True # For encode: adding # after nested-blocks
 
     @staticmethod
     def encode(
-        arr: Union[list, dict, tuple, set],
+        arr: Union[dict, list, tuple, set],
         url_mode: bool = False
     ) -> str:
         """
@@ -31,7 +33,6 @@ class HELML:
         
         :param arr: Input data structure (list, dict, or tuple) to be encoded.
         :param url_mode: A boolean indicating if the URL mode should be used.
-        :param val_encoder: A function to encode values or True for default encoding.
         :return: Encoded HELML string.
         """
         results_arr = []
@@ -40,7 +41,9 @@ class HELML:
         lvl_ch = "." if url_mode else ":"
         spc_ch = "_" if url_mode else " "
 
-        HELML._encode(arr, results_arr, 0, lvl_ch, spc_ch)
+        is_list = HELML.num_keys_cnt(arr)
+        
+        HELML._encode(arr, results_arr, 0, lvl_ch, spc_ch, is_list)
 
         if url_mode and len(results_arr) == 1:
             results_arr.append('')
@@ -53,18 +56,9 @@ class HELML:
         results_arr: list,
         level: int = 0,
         lvl_ch: str = ":",
-        spc_ch: str = " "
+        spc_ch: str = " ",
+        is_list: int = 0
     ) -> None:
-        """
-        Encode arr to results_arr (by reference).
-        
-        :param arr: Input data structure (dict, list, or tuple) to be encoded.
-        :param results_arr: A list of strings representing the encoded data.
-        :param val_encoder: A function to encode values or True for default encoding.
-        :param level: The current level of nesting.
-        :param lvl_ch: Character used for level separation.
-        :param spc_ch: Character used for space.
-        """
 
         # select value-encoder function: custom or internal default
         value_enco_fun = HELML.CUSTOM_VALUE_ENCODER if HELML.CUSTOM_VALUE_ENCODER is not None else HELML.valueEncoder
@@ -77,20 +71,21 @@ class HELML:
             if not isinstance(key, str):
                 key = str(key)
 
-            # check first char
-            first_char = key[:1]
-            # encode key in base64url if it contains unwanted characters
-            if lvl_ch in key or "~" in key or first_char == "#" or first_char == spc_ch or first_char == ' ' or first_char == '':
-                need_encode = True
-            else:
-                if spc_ch == '_':
-                    need_encode = not re.match(r"^[ -~]*$", key, flags=re.UNICODE)
-                else:
-                    need_encode = not all(c.isprintable() for c in key)
-
-            if need_encode or first_char == "-" or key[-1] == spc_ch or key[-1] == ' ':
-                # add "-" to the beginning of the key to indicate it's in base64url
-                key = "-" + HELML.base64url_encode(key)
+            if is_list and HELML.ENABLE_BONES and spc_ch == ' ':
+                key = '--'
+            elif not is_list:
+                # encode key to base64url if contains unwanted characters
+                # check first char
+                first_char = key[:1]
+                last_char = key[-1]
+                # encode key in base64url if it contains unwanted characters
+                if lvl_ch in key or "~" in key or first_char == "#" or first_char == spc_ch or first_char == ' ' or first_char == '':
+                    first_char = '-'
+                
+                if first_char == "-" or last_char == spc_ch or last_char == ' ' or not re.match(r"^[ -}]*$", key):
+                    # if not all(c.isprintable() for c in key)
+                    # add "-" to the beginning of the key to indicate it's in base64url
+                    key = "-" + HELML.base64Uencode(key)
 
             # add the appropriate number of colons to the left of the key, based on the current level
             ident = lvl_ch * level
@@ -99,17 +94,20 @@ class HELML:
             if HELML.ENABLE_SPC_IDENT and spc_ch == ' ':
                 ident = spc_ch * level + ident
 
-            if isinstance(value, (list, dict, tuple)):
+            is_arr = isinstance(value, (list, tuple, set))
+
+            if is_arr or isinstance(value, dict):
                 # Add empty line before create-key
                 if HELML.ENABLE_KEY_UPLINES and spc_ch == ' ':
                     results_arr.append('')
                 
-                # if the value is a dictionary, call this function recursively and increase the level
-                if isinstance(value, (list, tuple)):
+                # add ":" after key for lists
+                if is_arr:
                     key += lvl_ch
 
                 results_arr.append(ident + key)
-                HELML._encode(value, results_arr, level + 1, lvl_ch, spc_ch)
+
+                HELML._encode(value, results_arr, level + 1, lvl_ch, spc_ch, is_arr)
 
                 if HELML.ENABLE_KEY_UPLINES and spc_ch == ' ':
                     results_arr.append(spc_ch * level + '#')
@@ -125,16 +123,6 @@ class HELML:
         src_rows: str,
         get_layers: Union[int, str, Set[Union[str, int]], List[Union[str, int]]] = [0]
     ) -> Dict:
-        """
-        Decodes a HELML formatted string or list of strings into a nested dictionary.
-
-        Args:
-            src_rows: The HELML input as a string or strings-array.
-            val_decoder: The custom value decoder function. For default encoder set True.
-
-        Returns:
-            Dict: The decoded nested dictionary.
-        """
 
         # select value decoder function custom or internal default
         value_deco_fun = HELML.CUSTOM_VALUE_DECODER if HELML.CUSTOM_VALUE_DECODER is not None else HELML.valueDecoder
@@ -171,7 +159,7 @@ class HELML:
         result = {}
         stack = []
 
-        # array of stack stamps for delayed conversion of dict to list
+        # array of stack stamps for delayed conversion dict to list
         tolist = []
 
         min_level: int = -1
@@ -217,29 +205,30 @@ class HELML:
 
             # Decode the key if it starts with an equals sign
             if key.startswith("-"):
+                # Next number keys
+                if key == '--' or key == '---':
+                    # Next Num keys
+                    key = (str)(len(parent))
 
-                if key.startswith('-+'):
-                    # Layer control keys
-                    if value != None:
+                # Layer control keys
+                elif key == '-+' or key == '-++':
+                    if not value is None:
                         value = value.strip()
                     if key == '-++':
                         layer_init = value if value else '0'
                         layer_curr = layer_init
                     elif key == '-+':
-                        if value == None:
+                        if value is None:
                             layer_curr = str(int(layer_curr) + 1) if layer_curr.isdigit() else layer_init
                         else:
                             layer_curr = layer_init if value == '' else value
 
                     all_layers.add(layer_curr)
                     continue
-                elif key == '--' or key == '---':
-                    # Next Num keys
-                    key = (str)(len(parent))
                 else:
-                    key = HELML.base64url_decode(key[1:])
-                    if key == None:
-                        key = "ERR"
+                    decoded_key = HELML.base64Udecode(key[1:])
+                    if decoded_key != None:
+                        key = decoded_key
 
             # If the value is null, start a new dictionary and add it to the parent dictionary
             if value is None or value == '':
@@ -293,7 +282,7 @@ class HELML:
 
         Args:
             value: The value to be encoded.
-            spc_ch: The space character used for encoding. Default " ".
+            spc_ch: The space character used for encoding.
 
         Returns:
             str: The encoded HELML string.
@@ -302,16 +291,13 @@ class HELML:
         value_type = type(value).__name__
         if value_type == "str":
             if spc_ch == "_": # for url-mode
-                need_encode = "~" in value
-                if not need_encode:
-                    need_encode = not re.match(r"^[ -~]*$", value, flags=re.UNICODE)
+                need_encode = not re.match(r"^[ -}]*$", value)
             else:
-                need_encode = not all(c.isprintable() for c in value)
-                # reg_str = r"^[\p{Print}]*$"
+                need_encode = "~" in value or not all(c.isprintable() for c in value)
 
             if need_encode:
                 # if the string contains special characters, encode it in base64
-                return '-' + HELML.base64url_encode(value)
+                return '-' + HELML.base64Uencode(value)
             elif not value or value[0] == spc_ch or value[-1] == spc_ch or value[-1] == ' ':
                 # for empty strings or those that have spaces at the beginning or end
                 return "'" + value + "'"
@@ -331,7 +317,7 @@ class HELML:
             elif value == '-inf':
                 value = 'NIF'
             elif spc_ch == "_": # for url-mode because float contain dot-inside
-                return HELML.base64url_encode(value)
+                return HELML.base64Uencode(value)
 
         return spc_ch * 2 + str(value)
 
@@ -382,7 +368,7 @@ class HELML:
             except ValueError:
                 return False
         elif first_char == '-':
-            return HELML.base64url_decode(encoded_value[1:])
+            return HELML.base64Udecode(encoded_value[1:])
 
         # if there are no spaces or quotes or "-" at the beginning
         if HELML.CUSTOM_FORMAT_DECODER is not None:
@@ -390,15 +376,15 @@ class HELML:
             return HELML.CUSTOM_FORMAT_DECODER(encoded_value, spc_ch)
 
         # fallback: will return decoded string or None
-        return HELML.base64url_decode(encoded_value)
+        return HELML.base64Udecode(encoded_value)
 
     @staticmethod
-    def base64url_encode(string: str) -> str:
+    def base64Uencode(string: str) -> str:
          enc = base64.b64encode(string.encode())
          return enc.decode().rstrip("=").translate(str.maketrans('+/', '-_'))
 
     @staticmethod
-    def base64url_decode(s: str) -> str:
+    def base64Udecode(s: str) -> str:
         l = len(s)
         if not l:
             return ""
@@ -419,3 +405,25 @@ class HELML:
             return True
         except ValueError:
             return False
+
+    @staticmethod
+    def num_keys_cnt(arr: Union[dict, list, tuple, set]) -> int:
+        el_count = len(arr)
+        if not el_count:
+            return 0
+        if not isinstance(arr, dict):
+            return el_count
+        
+        # check for non-empty dict only, get keys list
+        keys_list = arr.keys()
+        exp_keys_range = range(0, el_count)
+        for i in keys_list:
+            if not isinstance(i, (int, str)):
+                return 0
+            try:
+                if int(i) not in exp_keys_range:
+                    return 0
+            except ValueError:
+                return 0
+
+        return el_count

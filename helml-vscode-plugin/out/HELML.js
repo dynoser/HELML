@@ -1,3 +1,5 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
 class HELML {
     static encode(arr, url_mode = false) {
         let results_arr = [];
@@ -31,10 +33,13 @@ class HELML {
                 // encode key in base64url if it contains unwanted characters
                 let fc = key.charAt(0);
                 let lc = key.charAt(key.length - 1);
-                if (key.indexOf(lvl_ch) !== -1 || key.indexOf('~') !== -1 || fc === '#' || fc === spc_ch || fc === ' ' || fc === '') {
-                    fc = "-";
+                if (key.indexOf(lvl_ch) !== -1 || fc === '#' || fc === spc_ch || fc === ' ' || fc === '' || lc === spc_ch || lc === ' ') {
+                    fc = '-';
                 }
-                if (fc === "-" || lc === spc_ch || lc === ' ' || !/^[ -~]+$/.test(key)) {
+                else if (!((spc_ch === '_') ? /^[ -}]+$/.test(key) : /^[^\x00-\x1F\x7E-\xFF]*$/.test(key))) {
+                    fc = '-';
+                }
+                if (fc === "-") {
                     // add "-" to the beginning of the key to indicate it's in base64url
                     key = "-" + HELML.base64Uencode(key);
                 }
@@ -66,17 +71,23 @@ class HELML {
             }
         }
     }
-    static decode(src_rows, layers_list = [0]) {
+    static decode(src_rows, get_layers = [0]) {
         // Set value decoder function as default valueDecoder or custom user function
         const valueDecoFun = HELML.CUSTOM_VALUE_DECODER === null ? HELML.valueDecoder : HELML.CUSTOM_VALUE_DECODER;
         // If the input is an array, use it. Otherwise, split the input string into an array.
         let layer_init = '0';
         let layer_curr = layer_init;
         let all_layers = new Set(['0']);
+        // Prepare layers_set from get_layers
+        // 1. Modify get_layers if needed: convert single T to array [0, T]
+        if (typeof get_layers === 'number' || typeof get_layers === 'string') {
+            get_layers = [get_layers];
+        }
+        let layers_list = new Set([layer_init]);
         // convert all elements in layers_list to String type
-        layers_list.forEach((item, index) => {
+        get_layers.forEach((item, index) => {
             if (typeof item === "number") {
-                layers_list[index] = item.toString();
+                layers_list.add(item.toString());
             }
         });
         let lvl_ch = ':';
@@ -139,7 +150,7 @@ class HELML {
                     // Next number keys
                     key = (typeof parent === 'object') ? String(Object.keys(parent).length) : '0';
                 }
-                else if (key.startsWith('-+')) {
+                else if (key === '-+' || key === '-++') {
                     // Layer control keys
                     if (value !== null) {
                         value = value.trim();
@@ -172,7 +183,7 @@ class HELML {
                 stack.push(key);
                 layer_curr = layer_init;
             }
-            else if (layers_list.includes(layer_curr)) {
+            else if (layers_list.has(layer_curr)) {
                 // Decode the value by current decoder function and add the key-value pair to the current array
                 parent[key] = valueDecoFun(value, spc_ch);
             }
@@ -185,21 +196,20 @@ class HELML {
     }
     static valueEncoder(value, spc_ch = ' ') {
         if (typeof value === 'string') {
-            let need_encode = value.indexOf('~') !== -1;
-            let reg_str;
+            let good_chars;
             if ('_' === spc_ch) {
-                // for url-mode: ASCII visible chars only
-                reg_str = /^[ -~]+$/;
+                // for url-mode: ASCII visible chars only (without ~)
+                good_chars = /^[ -}]+$/.test(value);
             }
             else {
-                // utf-8 visible chars
-                reg_str = /^[\u0020-\u007E\u00A0-\u00FF\u0100-\u017F\u0180-\u024F\u1E00-\u1EFF]+$/;
+                // utf-8 visible chars (without ~ and less than space)
+                good_chars = /^[^\x00-\x1F\x7E-\xFF]*$/.test(value);
             }
-            if (need_encode || !reg_str.test(value)) {
+            if (!good_chars) {
                 // if the string contains special characters, encode it in base64
                 return "-" + HELML.base64Uencode(value);
             }
-            else if (!value.length || spc_ch === value[0] || spc_ch === value.slice(-1) || /\s/.test(value.slice(-1))) {
+            else if (!value.length || spc_ch === value[0] || spc_ch === value.slice(-1) || ' ' === value.slice(-1)) {
                 // for empty strings or those that have spaces at the beginning or end
                 return "'" + value + "'";
             }
@@ -370,4 +380,4 @@ HELML.SPEC_TYPE_VALUES = {
     'INF': Infinity,
     'NIF': -Infinity
 };
-export default HELML;
+exports.default = HELML;

@@ -49,7 +49,7 @@ export default class HELML {
         return results_arr.join(str_imp);
     }
 
-    static _encode(arr: { [x: string]: any; }, results_arr: { push?: any; }, level = 0, lvl_ch = ":", spc_ch = " ", is_list = false) {
+    static _encode(arr: { [x: string]: any; }, results_arr: { push: any; }, level = 0, lvl_ch = ":", spc_ch = " ", is_list = false) {
 
         // Set value encoder function as default valueEncoder or custom user function
         const valueEncoFun = HELML.CUSTOM_VALUE_ENCODER === null ? HELML.valueEncoder : HELML.CUSTOM_VALUE_ENCODER;
@@ -63,10 +63,12 @@ export default class HELML {
                 // encode key in base64url if it contains unwanted characters
                 let fc = key.charAt(0);
                 let lc = key.charAt(key.length - 1);
-                if (key.indexOf(lvl_ch) !== -1 || key.indexOf('~') !== -1 || fc === '#' || fc === spc_ch || fc === ' ' || fc === '') {
-                    fc = "-";
+                if (key.indexOf(lvl_ch) !== -1 || fc === '#' || fc === spc_ch || fc === ' ' || fc === '' || lc === spc_ch || lc === ' ') {
+                    fc = '-';
+                } else if (! ((spc_ch === '_') ? /^[ -}]+$/.test(key) : /^[^\x00-\x1F\x7E-\xFF]*$/.test(key))) {
+                    fc = '-';
                 }
-                if (fc === "-" || lc === spc_ch || lc === ' ' || !/^[ -~]+$/.test(key)) {
+                if (fc === "-") {
                     // add "-" to the beginning of the key to indicate it's in base64url
                     key = "-" + HELML.base64Uencode(key);
                 }
@@ -87,9 +89,13 @@ export default class HELML {
                 if (HELML.ENABLE_KEY_UPLINES && spc_ch === ' ') {
                     results_arr.push('');
                 }
+
                 results_arr.push(ident + (is_arr ? key + lvl_ch : key));
+
                 value = HELML.iterablize(value);
+
                 HELML._encode(value, results_arr, level + 1, lvl_ch, spc_ch, is_arr);
+
                 if (HELML.ENABLE_HASHSYMBOLS && spc_ch === ' ') {
                     results_arr.push(' '. repeat(level) + '#');
                 }
@@ -102,7 +108,7 @@ export default class HELML {
         }
     }
     
-    static decode(src_rows: string, layers_list: (string | number)[] = [0]) {
+    static decode(src_rows: string, get_layers: number | string | (string | number)[] = [0]) {
         // Set value decoder function as default valueDecoder or custom user function
         const valueDecoFun = HELML.CUSTOM_VALUE_DECODER === null ? HELML.valueDecoder : HELML.CUSTOM_VALUE_DECODER;
 
@@ -110,10 +116,17 @@ export default class HELML {
         let layer_init: string = '0';
         let layer_curr: string = layer_init;
         let all_layers = new Set(['0']);
+
+        // Prepare layers_set from get_layers
+        // 1. Modify get_layers if needed: convert single T to array [0, T]
+        if (typeof get_layers === 'number' || typeof get_layers === 'string') {
+            get_layers = [get_layers];
+        }
+        let layers_list = new Set([layer_init]);
         // convert all elements in layers_list to String type
-        layers_list.forEach((item, index) => {
+        get_layers.forEach((item, index) => {
             if (typeof item === "number") {
-            layers_list[index] = item.toString();
+                layers_list.add(item.toString());
             }
         });
 
@@ -144,7 +157,9 @@ export default class HELML {
             line = line.trim();
     
             // Skip empty lines and comment lines starting with '#'
-            if (!line.length || line.charAt(0) === '#') continue;
+            if (!line.length || line.charAt(0) === '#')
+                continue;
+
             // Calculate the level of nesting for the current line by counting the number of colons at the beginning
             let level = 0;
             while (line.charAt(level) === lvl_ch) {
@@ -187,7 +202,7 @@ export default class HELML {
                 if (key === '--' || key === '---') {
                     // Next number keys
                     key = (typeof parent === 'object') ? String(Object.keys(parent).length) : '0';
-                } else if (key.startsWith('-+')) {
+                } else if (key === '-+' || key === '-++') {
                     // Layer control keys
                     if (value !== null) {
                         value = value.trim();
@@ -217,7 +232,7 @@ export default class HELML {
                 parent[key] = value === '' ? [] : {};
                 stack.push(key);
                 layer_curr = layer_init;
-            } else if (layers_list.includes(layer_curr)) {
+            } else if (layers_list.has(layer_curr)) {
                 // Decode the value by current decoder function and add the key-value pair to the current array
                 parent[key] = valueDecoFun(value, spc_ch);
             }
@@ -233,19 +248,18 @@ export default class HELML {
 
     static valueEncoder(value: string | number | null | boolean | number | bigint | undefined, spc_ch = ' ') {
         if (typeof value === 'string') {
-            let need_encode: boolean = value.indexOf('~') !== -1;
-            let reg_str: { test?: any; };
+            let good_chars: boolean;
             if ('_' === spc_ch) {
-                // for url-mode: ASCII visible chars only
-                reg_str = /^[ -~]+$/;
+                // for url-mode: ASCII visible chars only (without ~)
+                good_chars = /^[ -}]+$/.test(value);
             } else {
-                // utf-8 visible chars
-                reg_str = /^[\u0020-\u007E\u00A0-\u00FF\u0100-\u017F\u0180-\u024F\u1E00-\u1EFF]+$/
+                // utf-8 visible chars (without ~ and less than space)
+                good_chars = /^[^\x00-\x1F\x7E-\xFF]*$/.test(value);
             }
-            if (need_encode || !reg_str.test(value)) {
+            if (!good_chars) {
                 // if the string contains special characters, encode it in base64
                 return "-" + HELML.base64Uencode(value);
-            } else if (!value.length || spc_ch === value[0] || spc_ch === value.slice(-1) || /\s/.test(value.slice(-1))) {
+            } else if (!value.length || spc_ch === value[0] || spc_ch === value.slice(-1) || ' ' === value.slice(-1)) {
                 // for empty strings or those that have spaces at the beginning or end
                 return "'" + value + "'";
             } else {

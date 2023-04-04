@@ -105,6 +105,47 @@ class TestHELML(unittest.TestCase):
 
         print("Execution time: ", end_time - start_time, " seconds, total: ", len(lines), "rows")
 
+    def test_dict_num_keys(self):
+        arr = [
+            [2, (22, '333')],
+            [6, [22, '333',4444, '555555',66666, True]],
+            [0, {"0": 11, None: 222, "2": "3333", '3': '44444'}],
+            [5, {0: 11, 1: 222, 2: "3333",  3: '44444', 4: False}],
+            [6, {0: 11, 1: 222, 2: "3333", '3': '44444', '4': True, '5': None}],
+            [0, {0: 11, 1: 222, 2: "3333",  5: '44444'}],
+            [0, {0: 11, 1: 222, 2: "3333", '5': '44444'}],
+            [4, {"0": 11, "1": 222, "2": "3333", '3': '44444'}],
+            [0, {}],
+            [3, {"2": "Two", 1: "one", "0": "Zero"}],
+            [0, {"0": 11, "A": 222, "2": "3333", '3': '44444'}],
+        ]
+        for expected_result, input_dict in arr:
+            self.assertEqual(HELML.num_keys_cnt(input_dict), expected_result)
+
+    def test_in_array_types(self):
+        # Union[dict, list, tuple, set]
+        arr: dict = {}
+        exp_dict = {'0': 11, '1': 222, '2': "3333", '3': '44444'}
+        exp_values = exp_dict.values()
+        arr['dict'] = {0: 11, 1: 222, 2: "3333", 3: '44444'}
+        arr['tuple']  =  (11,    222,    "3333",    '44444')
+        arr['list']   =  [11,    222,    "3333",    '44444']
+        arr['set'] = set([11,    222,    "3333",    '44444'])
+
+        enco_target = '--:  11\n--:  222\n--: 3333\n--: 44444'
+
+        for arr_type, arr_data in arr.items():
+            encoded_str = HELML.encode(arr_data)
+            deco_arr = HELML.decode(encoded_str)
+            if (arr_type == 'set'):
+                for k, v in deco_arr.items():
+                    assert v in exp_values, f"Error: type {arr_type} broken"
+            else:
+                assert exp_dict == deco_arr, f"Error: type {arr_type} broken"
+
+
+
+
     def test_main_types(self):
         h_ml = """
 
@@ -308,8 +349,10 @@ class TestHELML(unittest.TestCase):
 
 if __name__ == '__main__':
     t = TestHELML()
-    t.test_layer_next()
+    t.test_dict_num_keys()
+    t.test_in_array_types()
     t.test_main_types()
+    t.test_layer_next()
     t.test_encode_decode_url_mode()
     t.test_utf8_codes()
     t.test_custom_decoder()

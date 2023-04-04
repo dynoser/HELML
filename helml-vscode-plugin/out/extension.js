@@ -1,4 +1,28 @@
+"use strict";
 //import jsesc from './jsesc';
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -8,10 +32,15 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-import * as vscode from 'vscode';
-import HELML from './HELML';
-import phparr from './phparr';
-import pythonarr from './pythonarr';
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.HELMLfromJSON = exports.decodeJSONtry = exports.removeJSONcomments = exports.HELMLtoJSON = exports.HELMLtoPHP = exports.HELMLtoPython = exports.deactivate = exports.activate = void 0;
+const vscode = __importStar(require("vscode"));
+const HELML_1 = __importDefault(require("./HELML"));
+const phparr_1 = __importDefault(require("./phparr"));
+const pythonarr_1 = __importDefault(require("./pythonarr"));
 let HELMLLayersList = ['0'];
 function reloadConfig(event = null) {
     const config = vscode.workspace.getConfiguration('helml');
@@ -20,21 +49,21 @@ function reloadConfig(event = null) {
     const enablebones = config.get('enablebones');
     const enableuplines = config.get('enableuplines');
     const enablehashsym = config.get('enablehashsym');
-    if (enableident !== undefined && enableident !== HELML.ENABLE_SPC_IDENT) {
+    if (enableident !== undefined && enableident !== HELML_1.default.ENABLE_SPC_IDENT) {
         config.update('enableident', enableident, true);
-        HELML.ENABLE_SPC_IDENT = enableident;
+        HELML_1.default.ENABLE_SPC_IDENT = enableident;
     }
-    if (enablebones !== undefined && enablebones !== HELML.ENABLE_BONES) {
+    if (enablebones !== undefined && enablebones !== HELML_1.default.ENABLE_BONES) {
         config.update('enablebones', enablebones, true);
-        HELML.ENABLE_BONES = enablebones;
+        HELML_1.default.ENABLE_BONES = enablebones;
     }
-    if (enableuplines !== undefined && enableuplines !== HELML.ENABLE_KEY_UPLINES) {
+    if (enableuplines !== undefined && enableuplines !== HELML_1.default.ENABLE_KEY_UPLINES) {
         config.update('enableuplines', enableuplines, true);
-        HELML.ENABLE_KEY_UPLINES = enableuplines;
+        HELML_1.default.ENABLE_KEY_UPLINES = enableuplines;
     }
-    if (enablehashsym !== undefined && enableuplines !== HELML.ENABLE_HASHSYMBOLS) {
+    if (enablehashsym !== undefined && enableuplines !== HELML_1.default.ENABLE_HASHSYMBOLS) {
         config.update('enablehashsym', enablehashsym, true);
-        HELML.ENABLE_HASHSYMBOLS = enablehashsym;
+        HELML_1.default.ENABLE_HASHSYMBOLS = enablehashsym;
     }
     if (event === null || event.affectsConfiguration(extname + '.getlayers')) {
         const getlayers = config.get('getlayers');
@@ -72,7 +101,7 @@ function cre_conv_fn(converter_fn) {
         }
     };
 }
-export function activate(context) {
+function activate(context) {
     const cmdToJSON = vscode.commands.registerCommand('helml.toJSON', cre_conv_fn(HELMLtoJSON));
     const cmdFromJSON = vscode.commands.registerCommand('helml.fromJSON', cre_conv_fn(HELMLfromJSON));
     const cmdToPHP = vscode.commands.registerCommand('helml.toPHP', cre_conv_fn(HELMLtoPHP));
@@ -114,7 +143,9 @@ export function activate(context) {
     context.subscriptions.push(cmdToPython);
     //context.subscriptions.push(cmdToJavaSc);
 }
-export function deactivate() { }
+exports.activate = activate;
+function deactivate() { }
+exports.deactivate = deactivate;
 // export function HELMLtoJavaScript(sel_text: string): string | null {
 //     try {
 //         const objArr = HELML.decode(sel_text);
@@ -130,10 +161,10 @@ export function deactivate() { }
 //         return null;
 //     }
 // }
-export function HELMLtoPython(sel_text) {
+function HELMLtoPython(sel_text) {
     try {
-        const objArr = HELML.decode(sel_text, HELMLLayersList);
-        const code_str = pythonarr.toPythonArr(objArr, 1);
+        const objArr = HELML_1.default.decode(sel_text, HELMLLayersList);
+        const code_str = pythonarr_1.default.toPythonArr(objArr, 1);
         return code_str;
     }
     catch (e) {
@@ -142,10 +173,11 @@ export function HELMLtoPython(sel_text) {
         return null;
     }
 }
-export function HELMLtoPHP(sel_text) {
+exports.HELMLtoPython = HELMLtoPython;
+function HELMLtoPHP(sel_text) {
     try {
-        const objArr = HELML.decode(sel_text, HELMLLayersList);
-        const code_str = phparr.toPHParr(objArr, 1);
+        const objArr = HELML_1.default.decode(sel_text, HELMLLayersList);
+        const code_str = phparr_1.default.toPHParr(objArr, 1);
         return code_str;
     }
     catch (e) {
@@ -154,9 +186,10 @@ export function HELMLtoPHP(sel_text) {
         return null;
     }
 }
-export function HELMLtoJSON(sel_text) {
+exports.HELMLtoPHP = HELMLtoPHP;
+function HELMLtoJSON(sel_text) {
     try {
-        const objArr = HELML.decode(sel_text, HELMLLayersList);
+        const objArr = HELML_1.default.decode(sel_text, HELMLLayersList);
         const json_str = JSON.stringify(objArr, null, '\t');
         return json_str;
     }
@@ -166,7 +199,8 @@ export function HELMLtoJSON(sel_text) {
         return null;
     }
 }
-export function removeJSONcomments(json_str) {
+exports.HELMLtoJSON = HELMLtoJSON;
+function removeJSONcomments(json_str) {
     //return json_str;
     const re1 = /^(\s*)\/\/.*$/gm; // remove comments from string-begin
     const re2 = /\/\*[^*]*\*+([^\/*][^*]*\*+)*\//g; // remove comments from end
@@ -174,7 +208,8 @@ export function removeJSONcomments(json_str) {
         .replace(re1, '')
         .replace(re2, '');
 }
-export function decodeJSONtry(json_str) {
+exports.removeJSONcomments = removeJSONcomments;
+function decodeJSONtry(json_str) {
     try {
         return JSON.parse(json_str);
     }
@@ -182,7 +217,8 @@ export function decodeJSONtry(json_str) {
         return null;
     }
 }
-export function HELMLfromJSON(sel_text) {
+exports.decodeJSONtry = decodeJSONtry;
+function HELMLfromJSON(sel_text) {
     try {
         // check selection text is from middle of the JSON
         sel_text = sel_text.trim();
@@ -198,7 +234,7 @@ export function HELMLfromJSON(sel_text) {
             sel_text = removeJSONcomments(sel_text);
             objArr = JSON.parse(sel_text);
         }
-        const helml_str = HELML.encode(objArr);
+        const helml_str = HELML_1.default.encode(objArr);
         return helml_str;
     }
     catch (e) {
@@ -206,6 +242,7 @@ export function HELMLfromJSON(sel_text) {
         return null;
     }
 }
+exports.HELMLfromJSON = HELMLfromJSON;
 // Hover-controller block
 function parseLine(line, word) {
     let result_str = null;
@@ -245,7 +282,7 @@ function parseLine(line, word) {
         }
         else {
             key_str = "-b64key";
-            let decoded_key = HELML.base64Udecode(key.substring(1));
+            let decoded_key = HELML_1.default.base64Udecode(key.substring(1));
             if (null === decoded_key) {
                 result_str = "ERROR: encoded KEY contain illegal chars";
             }
@@ -271,7 +308,7 @@ function parseLine(line, word) {
         }
         else if (value.charAt(0) === '-') {
             value_str = "-b64value";
-            let decoded_value = HELML.base64Udecode(value.substring(1));
+            let decoded_value = HELML_1.default.base64Udecode(value.substring(1));
             if (null === decoded_value) {
                 result_str = "ERROR: encoded VALUE contain illegal chars";
             }

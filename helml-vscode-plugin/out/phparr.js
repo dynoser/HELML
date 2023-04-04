@@ -1,4 +1,6 @@
-export default class phparr {
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+class phparr {
     static toPHParr(data, space) {
         // prepare spaces
         if (typeof space === 'number') {
@@ -62,3 +64,4 @@ export default class phparr {
         }
     }
 }
+exports.default = phparr;
