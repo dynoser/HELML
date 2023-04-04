@@ -184,7 +184,7 @@ class TestHELML(unittest.TestCase):
         assert decoded_data == expected_data, f"Error: decoded data {decoded_data}, expected data {expected_data}"
 
         encoded_data = HELML.encode(decoded_data, True)
-        expected_url = "A.~.0.__0~.1.__1~.2.~..0._In0~..1.__888~.3._Four~.4.''~B._B-key~C._C-key~D._D-key~TR.__T~FL.__F~NO.__N"
+        expected_url = "A.~.0.__0~.1.__1~.2.~..0._In0~..1.__888~.3._Four~.4.-~B._B-key~C._C-key~D._D-key~TR.__T~FL.__F~NO.__N"
         assert encoded_data == expected_url, f"Error: URL-encoded data {encoded_data}, expected data {expected_url}"
 
         decoded_data = HELML.decode(encoded_data)
@@ -204,6 +204,93 @@ class TestHELML(unittest.TestCase):
         encoded_data = HELML.encode(first_dec, True)
         second_dec = HELML.decode(encoded_data)
         assert first_dec == second_dec, f"Error URL in mode: first_dec {first_dec}, second_dec {second_dec}"
+
+    def test_b64_on_keys(self):
+        arr = {
+            "": "Empty key",
+            "\n": "Empty line",
+            "\t": "Tab",
+            "\n\n\n": "Empty lines",
+            "\t\t\t": "Tabs",
+            "One\nTwo": "Empty line inside",
+            "One\tTwo": "Tabs",
+            "Tilda~Inside": "~",
+            " Space left": "SPC LEFT",
+            "Space right ": "SPC RIGHT",
+            " Spaces ": "SPC LEFT AND RIGHT",
+            " Spaces ": "SPC LEFT AND RIGHT",
+            "Норм ключ": " Значение",
+            "Ключ с : двоеточием": "",
+            ":": "Просто ключ-двоеточие",
+            "0": "Zero-key"
+        }
+        encoded_data = HELML.encode(arr, False)
+        expected_enc = """\
+-: Empty key
+-Cg: Empty line
+-CQ: Tab
+-CgoK: Empty lines
+-CQkJ: Tabs
+-T25lClR3bw: Empty line inside
+-T25lCVR3bw: Tabs
+-VGlsZGF-SW5zaWRl:-fg
+-IFNwYWNlIGxlZnQ: SPC LEFT
+-U3BhY2UgcmlnaHQg: SPC RIGHT
+-IFNwYWNlcyA: SPC LEFT AND RIGHT
+Норм ключ:' Значение'
+-0JrQu9GO0Ycg0YEgOiDQtNCy0L7QtdGC0L7Rh9C40LXQvA:-
+-Og: Просто ключ-двоеточие
+0: Zero-key"""
+        decoded_data = HELML.decode(encoded_data)
+        assert decoded_data == arr, f"Error, different data on keys encode test"
+        assert encoded_data == expected_enc, "Error, unexpected encoded data keys-encode test"
+
+    def test_b64_on_values(self):
+        arr = [
+            "Simple value",
+            "\n",
+            "\t",
+            "\n\n\n",
+            "\t\t\t",
+            "Empty line\ninside",
+            "Tab\tInside",
+            "Tilda~Inside",
+            " Space left",
+            "Space right ",
+            " Spaces both ",
+            "Норм Значение",
+            "Значение с : двоеточием",
+            ":",
+            "0",
+            "",
+            "-Минус в начале",
+            "-"
+        ]
+        encoded_data = HELML.encode(arr, False)
+        print(encoded_data)
+        expected_enc = """\
+--: Simple value
+--:-Cg
+--:-CQ
+--:-CgoK
+--:-CQkJ
+--:-RW1wdHkgbGluZQppbnNpZGU
+--:-VGFiCUluc2lkZQ
+--:-VGlsZGF-SW5zaWRl
+--:' Space left'
+--:'Space right '
+--:' Spaces both '
+--: Норм Значение
+--: Значение с : двоеточием
+--: :
+--: 0
+--:-
+--: -Минус в начале
+--: -"""
+        decoded_data = HELML.decode(encoded_data)
+        arr_obj = {str(idx): val for idx, val in enumerate(arr)}
+        assert decoded_data == arr_obj, f"Error, different data on values encode test"
+        assert encoded_data == expected_enc, "Error, unexpected encoded data values-encode test"
 
     def test_min_level(self):
         '''This test allows us to check that we can add extra colons on the left.'''
@@ -349,12 +436,14 @@ class TestHELML(unittest.TestCase):
 
 if __name__ == '__main__':
     t = TestHELML()
+    t.test_b64_on_values()
+    t.test_b64_on_keys()
+    t.test_utf8_codes()
+    t.test_main_types()
     t.test_dict_num_keys()
     t.test_in_array_types()
-    t.test_main_types()
     t.test_layer_next()
     t.test_encode_decode_url_mode()
-    t.test_utf8_codes()
     t.test_custom_decoder()
     t.test_special_types()
     t.test_nan_type()

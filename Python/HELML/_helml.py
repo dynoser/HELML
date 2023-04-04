@@ -76,16 +76,15 @@ class HELML:
             elif not is_list:
                 # encode key to base64url if contains unwanted characters
                 # check first char
-                first_char = key[:1]
-                last_char = key[-1]
+                fc = key[:1]
                 # encode key in base64url if it contains unwanted characters
-                if lvl_ch in key or "~" in key or first_char == "#" or first_char == spc_ch or first_char == ' ' or first_char == '':
-                    first_char = '-'
-                
-                if first_char == "-" or last_char == spc_ch or last_char == ' ' or not re.match(r"^[ -}]*$", key):
-                    # if not all(c.isprintable() for c in key)
+                if lvl_ch in key or fc == "#" or fc == spc_ch or fc == ' ' or fc == ''  or key[-1] == spc_ch or key[-1] == ' ':
+                    fc = '-'
+                elif not (re.match(r'^[ -}]+$', key) if spc_ch == '_' else re.match(r'^[^\x00-\x1F\x7E-\xFF]+$', key)):
+                    fc = '-'
+                if fc == '-':
                     # add "-" to the beginning of the key to indicate it's in base64url
-                    key = "-" + HELML.base64Uencode(key)
+                    key = '-' + HELML.base64Uencode(key)
 
             # add the appropriate number of colons to the left of the key, based on the current level
             ident = lvl_ch * level
@@ -290,15 +289,10 @@ class HELML:
 
         value_type = type(value).__name__
         if value_type == "str":
-            if spc_ch == "_": # for url-mode
-                need_encode = not re.match(r"^[ -}]*$", value)
-            else:
-                need_encode = "~" in value or not all(c.isprintable() for c in value)
-
-            if need_encode:
+            if not value or not (re.match(r'^[ -}]+$', value) if spc_ch == '_' else re.match(r'^[^\x00-\x1F\x7E-\xFF]+$', value)):
                 # if the string contains special characters, encode it in base64
                 return '-' + HELML.base64Uencode(value)
-            elif not value or value[0] == spc_ch or value[-1] == spc_ch or value[-1] == ' ':
+            elif value[0] == spc_ch or value[-1] == spc_ch or value[-1] == ' ':
                 # for empty strings or those that have spaces at the beginning or end
                 return "'" + value + "'"
             else:

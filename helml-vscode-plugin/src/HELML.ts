@@ -65,7 +65,7 @@ export default class HELML {
                 let lc = key.charAt(key.length - 1);
                 if (key.indexOf(lvl_ch) !== -1 || fc === '#' || fc === spc_ch || fc === ' ' || fc === '' || lc === spc_ch || lc === ' ') {
                     fc = '-';
-                } else if (! ((spc_ch === '_') ? /^[ -}]+$/.test(key) : /^[^\x00-\x1F\x7E-\xFF]*$/.test(key))) {
+                } else if (! ((spc_ch === '_') ? /^[ -}]+$/.test(key) : /^[^\x00-\x1F\x7E-\xFF]+$/.test(key))) {
                     fc = '-';
                 }
                 if (fc === "-") {
@@ -254,12 +254,12 @@ export default class HELML {
                 good_chars = /^[ -}]+$/.test(value);
             } else {
                 // utf-8 visible chars (without ~ and less than space)
-                good_chars = /^[^\x00-\x1F\x7E-\xFF]*$/.test(value);
+                good_chars = /^[^\x00-\x1F\x7E-\xFF]+$/.test(value);
             }
-            if (!good_chars) {
+            if (!good_chars || !value.length) {
                 // if the string contains special characters, encode it in base64
                 return "-" + HELML.base64Uencode(value);
-            } else if (!value.length || spc_ch === value[0] || spc_ch === value.slice(-1) || ' ' === value.slice(-1)) {
+            } else if (spc_ch === value[0] || spc_ch === value.slice(-1) || ' ' === value.slice(-1)) {
                 // for empty strings or those that have spaces at the beginning or end
                 return "'" + value + "'";
             } else {
