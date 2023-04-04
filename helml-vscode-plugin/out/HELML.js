@@ -243,12 +243,14 @@ class HELML {
                     }
                 /* falls through */
                 case 'bigint':
+                    value = value === null || value === void 0 ? void 0 : value.toString();
                     break;
                 case 'object':
                     if (value === null) {
                         value = 'N';
                         break;
                     }
+                /* falls through */
                 default:
                     throw new Error(`Cannot encode value of type ${type}`);
             }

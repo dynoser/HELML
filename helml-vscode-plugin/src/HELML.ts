@@ -286,11 +286,13 @@ export default class HELML {
                     }
                     /* falls through */
                 case 'bigint':
+                    value = value?.toString();
                     break;
                 case 'object':
                     if (value === null) {
-                    value = 'N'; break;
+                        value = 'N'; break;
                     }
+                    /* falls through */
                 default:
                     throw new Error(`Cannot encode value of type ${type}`);
             }
