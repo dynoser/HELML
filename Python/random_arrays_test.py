@@ -267,7 +267,6 @@ class TestHELML(unittest.TestCase):
             "-"
         ]
         encoded_data = HELML.encode(arr, False)
-        print(encoded_data)
         expected_enc = """\
 --: Simple value
 --:-Cg
