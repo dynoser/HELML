@@ -4,6 +4,7 @@
 
 ## PHP package
 
+* [PHP Source code -- phpHELML](https://github.com/dynoser/phpHELML)
 * [HELML format definition (en)](https://github.com/dynoser/HELML/blob/master/docs/README-HELML_en.md)
 * [Описание формата HELML (ru)](https://github.com/dynoser/HELML/blob/master/docs/README-HELML_ru.md)
 
