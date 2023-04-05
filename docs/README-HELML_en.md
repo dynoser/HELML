@@ -57,7 +57,13 @@ II. Minimalism
 
   - HELML coding/decoding algorithms are simple, short and fast.
 
-III. The concept of multi-layering arrays
+III. Possibility of selective parsing
+
+   From a HELML file, you can easily select only the sections you need and ignore the rest.
+   This allows you to significantly speed up the selection of the necessary data from a large array in the HELML file,
+   without wasting time on currently uninteresting data and without occupying memory with this data.
+
+IV. The concept of multi-layering arrays
 
 * HELML supports the concept of multi-layering arrays, which can be useful.
 * See ["multilayer arrays"](https://github.com/dynoser/HELML/blob/master/docs/MultiLayerArrays_en.md)
