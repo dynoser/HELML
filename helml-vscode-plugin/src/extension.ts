@@ -121,6 +121,92 @@ export function activate(context: vscode.ExtensionContext) {
         vscode.window.showTextDocument(newFile);
     })
 
+    let disposable = vscode.workspace.onDidChangeTextDocument((event) => {
+        const editor = vscode.window.activeTextEditor;
+        if (editor && event.contentChanges.length) {
+            const document = editor.document;
+            if (document.languageId !== 'helml') {
+                return;
+            }
+            const change = event.contentChanges[0];
+            const newLine = change.text.includes('\n');
+            if (!newLine) {
+                return;
+            }
+            const lineNumber = event.contentChanges[0].range.start.line;
+            let prevLineNumber = lineNumber;
+            let prevLine: vscode.TextLine;
+            let line: string;
+            let level: number = 0;
+            let spc_cnt: number = 0;
+            let strlen: number;
+            let keyName: string = '';
+            while (prevLineNumber >= 0) {
+                // get previous line and then move pointer
+                prevLine = document.lineAt(prevLineNumber--);
+                line  = prevLine.text;
+                strlen = line.length;
+                if (!strlen) continue; // ignore empty lines
+
+                spc_cnt = 0;
+                level = 0;
+                for (let i = 0; i < strlen; i++) {
+                    if (line[i] === ' ') {
+                    spc_cnt++;
+                    } else {
+                    for (let j = i; j < strlen; j++) {
+                        if (line[j] === ':') {
+                        level++;
+                        } else {
+                        break;
+                        }
+                    }
+                    break;
+                    }
+                }
+
+                // Ignore comment lines starting with '#'
+                if (line.charAt(spc_cnt) === '#') continue;
+
+                // we found one of non-empty and non-comment line
+                // check sub-array create
+                const colonIndex = line.indexOf(':', spc_cnt + level + 1);
+                const haveColonDiv = colonIndex > (spc_cnt + level);
+                const onlyKeyNoDiv = (colonIndex < 0 && (spc_cnt + level) < strlen);
+                const colonDivAtEnd = haveColonDiv && (colonIndex === strlen - 1);
+                if (colonIndex > 0) {
+                    keyName = line.substring(spc_cnt+level, colonIndex);
+                }
+                else if (onlyKeyNoDiv) {
+                    keyName = line.substring(spc_cnt + level);
+                }
+                else {
+                    keyName = '';
+                }
+                if (colonDivAtEnd || onlyKeyNoDiv) {
+                    spc_cnt++;
+                    level++;
+                }
+                break;
+            }
+            let insertionStr = ' '.repeat(spc_cnt) + ':'.repeat(level);
+            if (keyName === '--') {
+                insertionStr += keyName + ':';
+            }
+
+            const currentPosition = editor.selection.active;
+            const insertPosition = currentPosition.with(lineNumber + 1, 0);
+            const afterInsertPos = currentPosition.with(lineNumber + 1, insertionStr.length);
+            editor.edit((builder) => {
+                builder.insert(insertPosition, insertionStr);
+            }).then(() => {
+                editor.selection = new vscode.Selection(afterInsertPos, afterInsertPos);
+            });
+        }
+    });
+    
+    context.subscriptions.push(disposable);
+
     context.subscriptions.push(cmdToJSON);
     context.subscriptions.push(cmdFromJsonDoc);
     context.subscriptions.push(cmdFromJSON);
