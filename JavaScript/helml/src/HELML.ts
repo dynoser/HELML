@@ -342,10 +342,10 @@ export default class HELML {
     static base64Uencode(str: string): string {
         let base64: string;
 
-        if (typeof Buffer !== 'undefined') {
-            base64 = Buffer.from(str, 'binary').toString('base64');
-        } else if (typeof window !== 'undefined') {
+        if (typeof window !== 'undefined') {
             base64 = window.btoa(str);
+        } else if (typeof Buffer !== 'undefined') {
+            base64 = Buffer.from(str, 'binary').toString('base64');
         } else {
             throw new Error('Not found me base64-encoder');
         }
@@ -360,10 +360,10 @@ export default class HELML {
     
         try {
             let decoded: string;
-            if (typeof Buffer !== 'undefined') {
-                decoded = Buffer.from(str, 'base64').toString('binary');
-            } else if (typeof window !== 'undefined') {
+            if (typeof window !== 'undefined') {
                 decoded = window.atob(str);
+            } else if (typeof Buffer !== 'undefined') {
+                decoded = Buffer.from(str, 'base64').toString('binary');
             } else {
                 throw new Error('Not found base64-decoder');
             }
