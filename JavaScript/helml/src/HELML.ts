@@ -1,6 +1,10 @@
 import type { fakeWindow } from './window.d.ts';
 
 declare var window: fakeWindow;
+declare global {
+    function btoa(input: string): string;
+    function atob(input: string): string;
+}
 
 export default class HELML {
     static ENABLE_BONES: boolean = true; // For encode: enable use "next"-keys like :--:
@@ -346,6 +350,8 @@ export default class HELML {
             base64 = window.btoa(str);
         } else if (typeof Buffer !== 'undefined') {
             base64 = Buffer.from(str, 'binary').toString('base64');
+        } else if (typeof btoa === "function") {
+            base64 = btoa(str);
         } else {
             throw new Error('Not found me base64-encoder');
         }
@@ -364,6 +370,8 @@ export default class HELML {
                 decoded = window.atob(str);
             } else if (typeof Buffer !== 'undefined') {
                 decoded = Buffer.from(str, 'base64').toString('binary');
+            } else if (typeof atob === 'function') {
+                decoded = atob(str);
             } else {
                 throw new Error('Not found base64-decoder');
             }

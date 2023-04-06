@@ -271,7 +271,7 @@ function SELECTIONtoBase64url(sel_text) {
         return inBase64url;
     }
     catch (e) {
-        vscode.window.showErrorMessage('Failed encode to base64url');
+        vscode.window.showErrorMessage(`Failed encode to base64url: ${e.message}`);
         return null;
     }
 }
@@ -282,7 +282,7 @@ function SELECTIONfromBase64url(sel_text) {
         return inBase64url;
     }
     catch (e) {
-        vscode.window.showErrorMessage('Failed decode to base64url');
+        vscode.window.showErrorMessage(`Failed decode from base64url: ${e.message}`);
         return null;
     }
 }

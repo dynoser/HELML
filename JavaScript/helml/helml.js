@@ -307,6 +307,9 @@ class HELML {
         else if (typeof Buffer !== 'undefined') {
             base64 = Buffer.from(str, 'binary').toString('base64');
         }
+        else if (typeof btoa === "function") {
+            base64 = btoa(str);
+        }
         else {
             throw new Error('Not found me base64-encoder');
         }
@@ -324,6 +327,9 @@ class HELML {
             }
             else if (typeof Buffer !== 'undefined') {
                 decoded = Buffer.from(str, 'base64').toString('binary');
+            }
+            else if (typeof atob === 'function') {
+                decoded = atob(str);
             }
             else {
                 throw new Error('Not found base64-decoder');

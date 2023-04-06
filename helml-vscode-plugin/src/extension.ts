@@ -271,8 +271,8 @@ export function SELECTIONtoBase64url(sel_text: string): string | null {
     try {
         const inBase64url = HELML.base64Uencode(sel_text);
         return inBase64url;
-    } catch(e) {
-        vscode.window.showErrorMessage('Failed encode to base64url');
+    } catch(e: any) {
+        vscode.window.showErrorMessage(`Failed encode to base64url: ${e.message}`);
         return null;
     }
 }
@@ -281,8 +281,8 @@ export function SELECTIONfromBase64url(sel_text: string): string | null {
     try {
         const inBase64url = HELML.base64Udecode(sel_text);
         return inBase64url;
-    } catch(e) {
-        vscode.window.showErrorMessage('Failed decode to base64url');
+    } catch(e: any) {
+        vscode.window.showErrorMessage(`Failed decode from base64url: ${e.message}`);
         return null;
     }
 }
