@@ -2,10 +2,12 @@
 
 import * as vscode from 'vscode';
 import HELML from './HELML';
+import LineHELML from './LineHELML';
 import phparr from './phparr';
 import pythonarr from './pythonarr';
 
 let HELMLLayersList: string[] = ['0'];
+let errorLines: number[] = [];
 
 function reloadConfig(event: vscode.ConfigurationChangeEvent | null = null) {
     const config = vscode.workspace.getConfiguration('helml');
@@ -84,6 +86,8 @@ export function activate(context: vscode.ExtensionContext) {
     const cmdFromJSON = vscode.commands.registerCommand('helml.fromJSON', cre_conv_fn(HELMLfromJSON));
     const cmdToPHP = vscode.commands.registerCommand('helml.toPHP', cre_conv_fn(HELMLtoPHP));
     const cmdToPython = vscode.commands.registerCommand('helml.toPython', cre_conv_fn(HELMLtoPython));
+    const cmdToBase64url = vscode.commands.registerCommand('helml.toBase64url', cre_conv_fn(SELECTIONtoBase64url));
+    const cmdFromBase64url = vscode.commands.registerCommand('helml.fromBase64url', cre_conv_fn(SELECTIONfromBase64url));
     //const cmdToJavaScript = vscode.commands.registerCommand('helml.toJavaScript', cre_conv_fn(HELMLtoJavaScript));
     
 
@@ -128,6 +132,34 @@ export function activate(context: vscode.ExtensionContext) {
             if (document.languageId !== 'helml') {
                 return;
             }
+            const changedLines: number[] = [];
+            let tildaadd: boolean = false;
+            for (const change of event.contentChanges) {
+
+                for (let i = change.range.start.line; i <= change.range.end.line; i++) {
+                    changedLines.push(i);
+                }
+
+                if (!tildaadd && change.text.includes('~')) {
+                    tildaadd = true;
+                }
+            }
+            
+            const intersectedLines = errorLines.filter(x => changedLines.includes(x));
+
+            if (intersectedLines.length) {
+                editor.setDecorations(errorDecoration, []);
+                highlightErrors(editor);
+            }
+            else if (tildaadd) {
+                highlightErrors(editor);
+            }
+
+            if (changedLines.length > 1) {
+                // do not continue for multiple-changes
+                return;
+            }
+
             const change = event.contentChanges[0];
             const newLine = change.text.includes('\n');
             if (!newLine) {
@@ -136,59 +168,26 @@ export function activate(context: vscode.ExtensionContext) {
             const lineNumber = event.contentChanges[0].range.start.line;
             let prevLineNumber = lineNumber;
             let prevLine: vscode.TextLine;
-            let line: string;
+            let line: LineHELML;
             let level: number = 0;
             let spc_cnt: number = 0;
-            let strlen: number;
             let keyName: string = '';
             while (prevLineNumber >= 0) {
                 // get previous line and then move pointer
                 prevLine = document.lineAt(prevLineNumber--);
-                line  = prevLine.text;
-                strlen = line.length;
-                if (!strlen) continue; // ignore empty lines
+                line = new LineHELML(prevLine.text);
+                if (line.is_ignore) continue; // ignore empty lines and comments
 
-                spc_cnt = 0;
-                level = 0;
-                for (let i = 0; i < strlen; i++) {
-                    if (line[i] === ' ') {
-                    spc_cnt++;
-                    } else {
-                    for (let j = i; j < strlen; j++) {
-                        if (line[j] === ':') {
-                        level++;
-                        } else {
-                        break;
-                        }
-                    }
-                    break;
-                    }
-                }
+                spc_cnt = line.spc_left_cnt;
+                level = line.level;
 
-                // Ignore comment lines starting with '#'
-                if (line.charAt(spc_cnt) === '#') continue;
-
-                // we found one of non-empty and non-comment line
-                // check sub-array create
-                const colonIndex = line.indexOf(':', spc_cnt + level + 1);
-                const haveColonDiv = colonIndex > (spc_cnt + level);
-                const onlyKeyNoDiv = (colonIndex < 0 && (spc_cnt + level) < strlen);
-                const colonDivAtEnd = haveColonDiv && (colonIndex === strlen - 1);
-                if (colonIndex > 0) {
-                    keyName = line.substring(spc_cnt+level, colonIndex);
-                }
-                else if (onlyKeyNoDiv) {
-                    keyName = line.substring(spc_cnt + level);
-                }
-                else {
-                    keyName = '';
-                }
-                if (colonDivAtEnd || onlyKeyNoDiv) {
+                if (line.is_creat) {
                     spc_cnt++;
                     level++;
                 }
                 break;
             }
+
             let insertionStr = ' '.repeat(spc_cnt) + ':'.repeat(level);
             if (keyName === '--') {
                 insertionStr += keyName + ':';
@@ -197,15 +196,46 @@ export function activate(context: vscode.ExtensionContext) {
             const currentPosition = editor.selection.active;
             const insertPosition = currentPosition.with(lineNumber + 1, 0);
             const afterInsertPos = currentPosition.with(lineNumber + 1, insertionStr.length);
+            const afterSelection = currentPosition.with(lineNumber + 1, insertionStr.length + spc_cnt);
             editor.edit((builder) => {
                 builder.insert(insertPosition, insertionStr);
             }).then(() => {
-                editor.selection = new vscode.Selection(afterInsertPos, afterInsertPos);
+                editor.selection = new vscode.Selection(afterInsertPos, afterSelection);
             });
         }
     });
     
     context.subscriptions.push(disposable);
+
+    // Decorator define
+    const errorDecoration = vscode.window.createTextEditorDecorationType({
+        backgroundColor: 'rgba(255, 0, 0, 0.3)',
+        textDecoration: 'underline wavy',
+    });
+
+    function highlightErrors(editor: vscode.TextEditor) {
+        const document = editor.document;
+        const decorations = [];
+
+        for (let i = 0; i < document.lineCount; i++) {
+            const line = document.lineAt(i);
+            const st  = line.text;
+            if (st.indexOf('~') != -1) {
+                errorLines.push(i);
+                const range = new vscode.Range(line.range.start, line.range.end);
+                decorations.push({ range });
+            }
+        }
+
+        editor.setDecorations(errorDecoration, decorations);
+    }
+
+    const onchangesdis = vscode.window.onDidChangeActiveTextEditor((editor) => {
+        if (editor) {
+            highlightErrors(editor);
+        }
+    });
+    context.subscriptions.push(onchangesdis);
 
     context.subscriptions.push(cmdToJSON);
     context.subscriptions.push(cmdFromJsonDoc);
@@ -213,6 +243,7 @@ export function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(cmdToPHP);
     context.subscriptions.push(cmdToPython);
     //context.subscriptions.push(cmdToJavaSc);
+    context.subscriptions.push(cmdToBase64url);
     
 }
 
@@ -233,6 +264,25 @@ export function deactivate() { }
 //         return null;
 //     }
 // }
+export function SELECTIONtoBase64url(sel_text: string): string | null {
+    try {
+        const inBase64url = HELML.base64Uencode(sel_text);
+        return inBase64url;
+    } catch(e) {
+        vscode.window.showErrorMessage('Failed encode to base64url');
+        return null;
+    }
+}
+
+export function SELECTIONfromBase64url(sel_text: string): string | null {
+    try {
+        const inBase64url = HELML.base64Udecode(sel_text);
+        return inBase64url;
+    } catch(e) {
+        vscode.window.showErrorMessage('Failed decode to base64url');
+        return null;
+    }
+}
 
 export function HELMLtoPython(sel_text: string): string | null {
     try {
@@ -312,86 +362,136 @@ export function HELMLfromJSON(sel_text: string): string | null {
 }
 
 // Hover-controller block
-function parseLine(line: string, word: string): string | null {
-    let result_str: string | null = null;
-    let key_str = "key";
-    let value_str = " value";
-
-    line = line.trim();
-
-    if (!line.length || line.charAt(0) === '#') return null;
-
-    let lvl_ch = ':';
-
-    // Calculate the level of nesting
-    let level = 0;
-    while (line.charAt(level) === lvl_ch) {
-        level++;
+function exploreLine(src_str: string, word: string): string | null {
+    if (src_str.indexOf('~') != -1) {
+        return "Char `~` illegal for HELML, please encode it to base64";
     }
 
-    // If the line has colons at the beginning, remove them from the line
-    if (level) {
-        line = line.substring(level);
+    let line = new LineHELML(src_str);
+
+    if (line.is_ignore) {
+        if (line.key === '#') {
+            return "*Comment line*";
+        }
+        return null;
     }
 
-    // Split the line into a
-    const firstDiv = line.indexOf(lvl_ch);
-    let key = firstDiv === -1 ? line : line.substring(0, firstDiv);
-    let value = firstDiv === -1 ? null : line.substring(firstDiv + 1);
+    let key = line.key;
+    let value = line.value;
 
-    // check key by first char
-    if (key.charAt(0) === '-') {
-        if (key === '--') {
-            // The bone-key means "next number".
-            key_str = "next";
-            key = "[NextNum]";
-        } else if (key.startsWith('-+')) {
+    let key_str: string = key;
+    let value_str: string = value;
+
+    if (line.is_layer) {
+        // Make value bold in Markdown
+        value_str = '*' + value + '*';
+        // layer key -+
+        if (key === '-+') {
             if (value) {
-                return "Layer: " + value;
-            } else {
-                return "Layer Next";
+                return "Layer temp: " + value_str;
             }
+            return "Layer Next";
+        }
+        // Layer key -++
+        if (value) {
+            return "Layer init: " + value_str;
+        }
+        return "Layer init: 0";
+    }
+
+    // key analyze
+    let keyIsSpec = false;
+    let fc = key.charAt(0);
+    if (fc === '-') {
+        keyIsSpec = true;
+        // Next key --
+        if (key === '--') {
+            key_str = "*NextNum*";
         } else {
-            key_str = "-b64key";
-            let decoded_key = HELML.base64Udecode(key.substring(1));
-            if (null === decoded_key) {
-                result_str = "ERROR: encoded KEY contain illegal chars";
+            // -base64
+            if (/^[A-Za-z0-9\-_+\/=]*$/.test(key)) {
+                let decoded_key = HELML.base64Udecode(key.substring(1));
+                if (null === decoded_key) {
+                    return "ERROR: Can't decode KEY from base64url";
+                }
+                if (/^[ -~]+$/.test(decoded_key)) {
+                    // show decoded key if possible
+                    key_str = `(*${decoded_key}*)`;
+                } else {
+                    key_str = `(base64:${key})`;
+                }
             } else {
-                const printableRegex = /^[ -~]+$/;
-                if (printableRegex.test(decoded_key)) {
-                  key_str = `-b64key(<i>${decoded_key}</i>)`;
+                key_str = 'ERROR: KEY must contain chars from base64/base64url encode';
+            }
+        }
+    } else if (fc === ' ') {
+        return "ERROR: space before key";
+    }
+
+    // Creaters
+    if (line.is_creat) {
+        if (value === null) {
+            return `Create Array: **${key_str}**`;
+        }
+        return `Create LIST: **${key_str}**`;
+    }
+
+    // Now value is not empty string. Key:value variants analyzing
+
+    fc = value.charAt(0);
+    const l = value.length;
+    const sc = l > 1 ? value.charAt(1) : '';
+    if (fc === ' ') {
+        if (sc === ' ') {
+            let slicedValue: string = value.slice(2); // strip left spaces
+            switch(slicedValue) {
+            case 'N': value_str = ' *null*'; break;
+            case 'U': value_str = ' *undefined*'; break;
+            case 'T': value_str = ' *true*'; break;
+            case 'F': value_str = ' *false*'; break;
+            case 'NAN': value_str = ' *NaN*'; break;
+            case 'INF': value_str = ' *Infinity*'; break;
+            case 'NIF': value_str = ' *-Infinity*'; break;
+            default:
+                if (/^-?\d+(.\d+)?$/.test(slicedValue)) {
+                    // it's probably a numeric value
+                    if (slicedValue.indexOf('.') !== -1) {
+                        // if there's a decimal point, it's a floating point number
+                        value_str = " *(float)*" + slicedValue;
+                    } else {
+                        // if there's no decimal point, it's an integer
+                        value_str = " *(int)*" + slicedValue;
+                    }
+                } else {
+                    value_str = " *(unknown)*" + slicedValue;
                 }
             }
-        }
-    }
 
-    if (result_str === null) {
-        if (value === null) {
-            result_str = `Create [${key}] Array`;
-        } else if (value === "") {
-            result_str = `Create [${key}] LIST`;
-        } else if (value.startsWith(' ')) {
-            if (value.startsWith('  ')) {
-                value_str = " value <i>(non-string)<i>";
-            }
-        } else if (value.charAt(0) === '-') {
-            value_str = "-b64value";
-            let decoded_value = HELML.base64Udecode(value.substring(1));
-            if (null === decoded_value) {
-                result_str = "ERROR: encoded VALUE contain illegal chars";
-            } else {
-                value_str = `-b64=${decoded_value}`;
-            }
+        } else if (!keyIsSpec) {
+            // Plain key and Plain value
+            return key + ': ' + value;
+        }
+    } else if (fc === '"' || fc === "'") {
+        value_str = `${fc}*quoted value*"${fc}`;
+    } else if (fc === '-') {
+        if (l === 1) {
+            value_str = '""';
         } else {
-            value_str = "UNKNOWN or USER-DEFINED VALUE";
+            if (/^[A-Za-z0-9\-_+\/=]*$/.test(value)) {
+                let decoded_value = HELML.base64Udecode(value.substring(1));
+                if (null === decoded_value) {
+                    return "ERROR: Can't decode VALUE from base64url";
+                }
+                value_str = `(*${decoded_value}*)`;
+            } else {
+                return "ERROR: VALUE must contain chars from base64/base64url encode";
+            }
         }
+    } else {
+        value_str =`UNKNOWN or USER-DEFINED VALUE, fc="${fc}"`;
     }
 
-    if (result_str === null) {
-        result_str = key_str + ":" + value_str;
-    }
-
-    return result_str;
+    return key_str + ":" + value_str;
 }
 
 const hoverProvider: vscode.HoverProvider = {
@@ -401,7 +501,7 @@ const hoverProvider: vscode.HoverProvider = {
         const wordRange = document.getWordRangeAtPosition(position);
         const word = document.getText(wordRange);
 
-        const parsedText = parseLine(text, word);
+        const parsedText = exploreLine(text, word);
         if (parsedText) {
             return new vscode.Hover(parsedText);
         }
