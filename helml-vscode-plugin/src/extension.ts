@@ -215,6 +215,9 @@ export function activate(context: vscode.ExtensionContext) {
 
     function highlightErrors(editor: vscode.TextEditor) {
         const document = editor.document;
+        if (document.languageId !== 'helml') {
+            return;
+        }
         const decorations = [];
 
         for (let i = 0; i < document.lineCount; i++) {

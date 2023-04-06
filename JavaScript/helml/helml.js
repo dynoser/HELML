@@ -304,7 +304,7 @@ class HELML {
         if (typeof Buffer !== 'undefined') {
             base64 = Buffer.from(str, 'binary').toString('base64');
         }
-        else if (typeof window !== 'undefined' && typeof window.btoa === 'function') {
+        else if (typeof window !== 'undefined') {
             base64 = window.btoa(str);
         }
         else {
@@ -322,7 +322,7 @@ class HELML {
             if (typeof Buffer !== 'undefined') {
                 decoded = Buffer.from(str, 'base64').toString('binary');
             }
-            else if (typeof window !== 'undefined' && typeof window.atob === 'function') {
+            else if (typeof window !== 'undefined') {
                 decoded = window.atob(str);
             }
             else {

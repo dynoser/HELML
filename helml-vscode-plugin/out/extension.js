@@ -218,6 +218,9 @@ function activate(context) {
     });
     function highlightErrors(editor) {
         const document = editor.document;
+        if (document.languageId !== 'helml') {
+            return;
+        }
         const decorations = [];
         for (let i = 0; i < document.lineCount; i++) {
             const line = document.lineAt(i);

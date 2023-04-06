@@ -344,7 +344,7 @@ export default class HELML {
 
         if (typeof Buffer !== 'undefined') {
             base64 = Buffer.from(str, 'binary').toString('base64');
-        } else if (typeof window !== 'undefined' && typeof window.btoa === 'function') {
+        } else if (typeof window !== 'undefined') {
             base64 = window.btoa(str);
         } else {
             throw new Error('Not found me base64-encoder');
@@ -362,7 +362,7 @@ export default class HELML {
             let decoded: string;
             if (typeof Buffer !== 'undefined') {
                 decoded = Buffer.from(str, 'base64').toString('binary');
-            } else if (typeof window !== 'undefined' && typeof window.atob === 'function') {
+            } else if (typeof window !== 'undefined') {
                 decoded = window.atob(str);
             } else {
                 throw new Error('Not found base64-decoder');
