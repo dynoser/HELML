@@ -2,7 +2,7 @@
   "name": "helml",
   "displayName": "helml",
   "description": "Plugin to encode/decode HELML data and syntaxes highliting",
-  "version": "0.0.20",
+  "version": "0.0.21",
   "publisher": "dynoser",
   "license": "MIT",
   "repository": {
@@ -66,6 +66,10 @@
       {
         "command": "helml.fromBase64url",
         "title": "fromBase64url()"
+      },
+      {
+        "command": "helml.toURL",
+        "title": "HELML to URL-mode()"
       }
     ],
     "menus": {

@@ -36,7 +36,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.HELMLfromJSON = exports.decodeJSONtry = exports.removeJSONcomments = exports.HELMLtoJSON = exports.HELMLtoPHP = exports.HELMLtoPython = exports.SELECTIONfromBase64url = exports.SELECTIONtoBase64url = exports.deactivate = exports.activate = void 0;
+exports.HELMLfromJSON = exports.decodeJSONtry2 = exports.decodeJSONtry1 = exports.removeJSONcomments = exports.HELMLtoJSON = exports.HELMLtoPHP = exports.HELMLtoPython = exports.HELMLtoURL = exports.SELECTIONfromBase64url = exports.SELECTIONtoBase64url = exports.deactivate = exports.activate = void 0;
 const vscode = __importStar(require("vscode"));
 const HELML_1 = __importDefault(require("./HELML"));
 const LineHELML_1 = __importDefault(require("./LineHELML"));
@@ -110,6 +110,7 @@ function activate(context) {
     const cmdToPython = vscode.commands.registerCommand('helml.toPython', cre_conv_fn(HELMLtoPython));
     const cmdToBase64url = vscode.commands.registerCommand('helml.toBase64url', cre_conv_fn(SELECTIONtoBase64url));
     const cmdFromBase64url = vscode.commands.registerCommand('helml.fromBase64url', cre_conv_fn(SELECTIONfromBase64url));
+    const cmdHELMLtoURL = vscode.commands.registerCommand('helml.toURL', cre_conv_fn(HELMLtoURL));
     //const cmdToJavaScript = vscode.commands.registerCommand('helml.toJavaScript', cre_conv_fn(HELMLtoJavaScript));
     const cmdFromJsonDoc = vscode.commands.registerCommand('helml.fromJSONDoc', () => __awaiter(this, void 0, void 0, function* () {
         const editor = vscode.window.activeTextEditor;
@@ -170,9 +171,14 @@ function activate(context) {
                 return;
             }
             const change = event.contentChanges[0];
-            const newLine = change.text.includes('\n');
-            if (!newLine) {
+            const oneNewLine = change.text.indexOf("\n");
+            // If no new-line
+            if (oneNewLine < 0)
                 return;
+            if (oneNewLine < change.text.length - 1) {
+                // if new-line is not at EOL, if more than 1 new-line
+                if (change.text.indexOf("\n", oneNewLine + 1) != -1)
+                    return;
             }
             const lineNumber = event.contentChanges[0].range.start.line;
             let prevLineNumber = lineNumber;
@@ -193,11 +199,19 @@ function activate(context) {
                     spc_cnt++;
                     level++;
                 }
+                keyName = line.key;
                 break;
+            }
+            if (keyName === '') {
+                // do not insert any idents if previous key not entered
+                return;
             }
             let insertionStr = ' '.repeat(spc_cnt) + ':'.repeat(level);
             if (keyName === '--') {
                 insertionStr += keyName + ':';
+            }
+            if (!insertionStr.length) {
+                return;
             }
             const currentPosition = editor.selection.active;
             const insertPosition = currentPosition.with(lineNumber + 1, 0);
@@ -221,8 +235,12 @@ function activate(context) {
         if (document.languageId !== 'helml') {
             return;
         }
+        if (document.lineCount < 2) {
+            // one string may be HELML-URL
+            return;
+        }
         const decorations = [];
-        for (let i = 0; i < document.lineCount; i++) {
+        for (let i = 1; i < document.lineCount; i++) {
             const line = document.lineAt(i);
             const st = line.text;
             if (st.indexOf('~') != -1) {
@@ -246,6 +264,7 @@ function activate(context) {
     context.subscriptions.push(cmdToPython);
     //context.subscriptions.push(cmdToJavaSc);
     context.subscriptions.push(cmdToBase64url);
+    context.subscriptions.push(cmdFromBase64url);
 }
 exports.activate = activate;
 function deactivate() { }
@@ -287,9 +306,27 @@ function SELECTIONfromBase64url(sel_text) {
     }
 }
 exports.SELECTIONfromBase64url = SELECTIONfromBase64url;
+function HELMLtoURL(sel_text) {
+    try {
+        let objArr = decodeJSONtry2(sel_text);
+        if (objArr === null) {
+            objArr = HELML_1.default.decode(sel_text, HELMLLayersList);
+        }
+        const code_str = HELML_1.default.encode(objArr, true);
+        return code_str;
+    }
+    catch (e) {
+        vscode.window.showErrorMessage(`Failed encode to HELML-url: ${e.message}`);
+        return null;
+    }
+}
+exports.HELMLtoURL = HELMLtoURL;
 function HELMLtoPython(sel_text) {
     try {
-        const objArr = HELML_1.default.decode(sel_text, HELMLLayersList);
+        let objArr = decodeJSONtry2(sel_text);
+        if (objArr === null) {
+            objArr = HELML_1.default.decode(sel_text, HELMLLayersList);
+        }
         const code_str = pythonarr_1.default.toPythonArr(objArr, 1);
         return code_str;
     }
@@ -302,7 +339,10 @@ function HELMLtoPython(sel_text) {
 exports.HELMLtoPython = HELMLtoPython;
 function HELMLtoPHP(sel_text) {
     try {
-        const objArr = HELML_1.default.decode(sel_text, HELMLLayersList);
+        let objArr = decodeJSONtry2(sel_text);
+        if (objArr === null) {
+            objArr = HELML_1.default.decode(sel_text, HELMLLayersList);
+        }
         const code_str = phparr_1.default.toPHParr(objArr, 1);
         return code_str;
     }
@@ -315,7 +355,10 @@ function HELMLtoPHP(sel_text) {
 exports.HELMLtoPHP = HELMLtoPHP;
 function HELMLtoJSON(sel_text) {
     try {
-        const objArr = HELML_1.default.decode(sel_text, HELMLLayersList);
+        let objArr = decodeJSONtry2(sel_text);
+        if (objArr === null) {
+            objArr = HELML_1.default.decode(sel_text, HELMLLayersList);
+        }
         const json_str = JSON.stringify(objArr, null, '\t');
         return json_str;
     }
@@ -335,7 +378,7 @@ function removeJSONcomments(json_str) {
         .replace(re2, '');
 }
 exports.removeJSONcomments = removeJSONcomments;
-function decodeJSONtry(json_str) {
+function decodeJSONtry1(json_str) {
     try {
         return JSON.parse(json_str);
     }
@@ -343,30 +386,40 @@ function decodeJSONtry(json_str) {
         return null;
     }
 }
-exports.decodeJSONtry = decodeJSONtry;
+exports.decodeJSONtry1 = decodeJSONtry1;
+function decodeJSONtry2(json_str) {
+    json_str = json_str.trim();
+    // try decode as it
+    let objArr = decodeJSONtry1(json_str);
+    if (objArr !== null) {
+        return objArr;
+    }
+    // if not starts With "{" then try add it
+    if (!json_str.startsWith('{')) {
+        json_str = '{' + json_str;
+        if (json_str.endsWith(",")) {
+            json_str = json_str.slice(0, -1);
+        }
+        json_str += '}';
+        // try to decode again
+        objArr = decodeJSONtry1(json_str);
+        if (objArr !== null) {
+            return objArr;
+        }
+    }
+    // try to remove comments
+    json_str = removeJSONcomments(json_str);
+    return decodeJSONtry1(json_str);
+}
+exports.decodeJSONtry2 = decodeJSONtry2;
 function HELMLfromJSON(sel_text) {
-    try {
-        // check selection text is from middle of the JSON
-        sel_text = sel_text.trim();
-        if (sel_text.startsWith('"')) {
-            sel_text = '{' + sel_text;
-            if (sel_text.endsWith(",")) {
-                sel_text = sel_text.slice(0, -1);
-            }
-            sel_text += '}';
-        }
-        let objArr = decodeJSONtry(sel_text);
-        if (objArr === null) {
-            sel_text = removeJSONcomments(sel_text);
-            objArr = JSON.parse(sel_text);
-        }
+    let objArr = decodeJSONtry2(sel_text);
+    if (objArr !== null) {
         const helml_str = HELML_1.default.encode(objArr);
         return helml_str;
     }
-    catch (e) {
-        vscode.window.showErrorMessage('Failed to decode JSON to HELML!');
-        return null;
-    }
+    vscode.window.showErrorMessage('Failed to decode JSON to HELML!');
+    return null;
 }
 exports.HELMLfromJSON = HELMLfromJSON;
 // Hover-controller block
@@ -383,7 +436,7 @@ function exploreLine(src_str, word) {
     }
     let key = line.key;
     let value = line.value;
-    let key_str = key;
+    let key_str = '`' + key + '`';
     let value_str = value;
     if (line.is_layer) {
         // Make value bold in Markdown
@@ -408,7 +461,7 @@ function exploreLine(src_str, word) {
         keyIsSpec = true;
         // Next key --
         if (key === '--') {
-            key_str = "*NextNum*";
+            key_str = "`NextNum`";
         }
         else {
             // -base64
@@ -436,9 +489,9 @@ function exploreLine(src_str, word) {
     // Creaters
     if (line.is_creat) {
         if (value === null) {
-            return `Create Array: **${key_str}**`;
+            return `Create Array: ${key_str}`;
         }
-        return `Create LIST: **${key_str}**`;
+        return `Create LIST: ${key_str}`;
     }
     // Now value is not empty string. Key:value variants analyzing
     fc = value.charAt(0);
@@ -488,7 +541,7 @@ function exploreLine(src_str, word) {
         }
         else if (!keyIsSpec) {
             // Plain key and Plain value
-            return key + ': ' + value;
+            return `${key_str} = "${value}"`;
         }
     }
     else if (fc === '"' || fc === "'") {

@@ -88,6 +88,7 @@ export function activate(context: vscode.ExtensionContext) {
     const cmdToPython = vscode.commands.registerCommand('helml.toPython', cre_conv_fn(HELMLtoPython));
     const cmdToBase64url = vscode.commands.registerCommand('helml.toBase64url', cre_conv_fn(SELECTIONtoBase64url));
     const cmdFromBase64url = vscode.commands.registerCommand('helml.fromBase64url', cre_conv_fn(SELECTIONfromBase64url));
+    const cmdHELMLtoURL = vscode.commands.registerCommand('helml.toURL', cre_conv_fn(HELMLtoURL));
     //const cmdToJavaScript = vscode.commands.registerCommand('helml.toJavaScript', cre_conv_fn(HELMLtoJavaScript));
     
 
@@ -161,10 +162,14 @@ export function activate(context: vscode.ExtensionContext) {
             }
 
             const change = event.contentChanges[0];
-            const newLine = change.text.includes('\n');
-            if (!newLine) {
-                return;
+            const oneNewLine = change.text.indexOf("\n");
+            // If no new-line
+            if (oneNewLine < 0) return;
+            if (oneNewLine < change.text.length - 1) {
+                // if new-line is not at EOL, if more than 1 new-line
+                if (change.text.indexOf("\n", oneNewLine + 1) != -1) return;
             }
+
             const lineNumber = event.contentChanges[0].range.start.line;
             let prevLineNumber = lineNumber;
             let prevLine: vscode.TextLine;
@@ -185,14 +190,22 @@ export function activate(context: vscode.ExtensionContext) {
                     spc_cnt++;
                     level++;
                 }
+                keyName = line.key;
                 break;
+            }
+
+            if (keyName === '') {
+                // do not insert any idents if previous key not entered
+                return;
             }
 
             let insertionStr = ' '.repeat(spc_cnt) + ':'.repeat(level);
             if (keyName === '--') {
                 insertionStr += keyName + ':';
             }
-
+            if (!insertionStr.length) {
+                return;
+            }
             const currentPosition = editor.selection.active;
             const insertPosition = currentPosition.with(lineNumber + 1, 0);
             const afterInsertPos = currentPosition.with(lineNumber + 1, insertionStr.length);
@@ -218,9 +231,13 @@ export function activate(context: vscode.ExtensionContext) {
         if (document.languageId !== 'helml') {
             return;
         }
+        if (document.lineCount < 2) {
+            // one string may be HELML-URL
+            return;
+        }
         const decorations = [];
 
-        for (let i = 0; i < document.lineCount; i++) {
+        for (let i = 1; i < document.lineCount; i++) {
             const line = document.lineAt(i);
             const st  = line.text;
             if (st.indexOf('~') != -1) {
@@ -247,7 +264,7 @@ export function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(cmdToPython);
     //context.subscriptions.push(cmdToJavaSc);
     context.subscriptions.push(cmdToBase64url);
-    
+    context.subscriptions.push(cmdFromBase64url);
 }
 
 export function deactivate() { }
@@ -287,9 +304,27 @@ export function SELECTIONfromBase64url(sel_text: string): string | null {
     }
 }
 
+export function HELMLtoURL(sel_text: string): string | null {
+    try {
+        let objArr = decodeJSONtry2(sel_text);
+        if (objArr === null) {
+            objArr = HELML.decode(sel_text, HELMLLayersList);
+        }
+        const code_str = HELML.encode(objArr, true);
+        return code_str;
+    } catch(e: any) {
+        vscode.window.showErrorMessage(`Failed encode to HELML-url: ${e.message}`);
+        return null;
+    }
+}
+
+
 export function HELMLtoPython(sel_text: string): string | null {
     try {
-        const objArr = HELML.decode(sel_text, HELMLLayersList);
+        let objArr = decodeJSONtry2(sel_text);
+        if (objArr === null) {
+            objArr = HELML.decode(sel_text, HELMLLayersList);
+        }
         const code_str = pythonarr.toPythonArr(objArr, 1);
         return code_str;
     } catch (e) {
@@ -301,7 +336,10 @@ export function HELMLtoPython(sel_text: string): string | null {
 
 export function HELMLtoPHP(sel_text: string): string | null {
     try {
-        const objArr = HELML.decode(sel_text, HELMLLayersList);
+        let objArr = decodeJSONtry2(sel_text);
+        if (objArr === null) {
+            objArr = HELML.decode(sel_text, HELMLLayersList);
+        }
         const code_str = phparr.toPHParr(objArr, 1);
         return code_str;
     } catch (e) {
@@ -313,7 +351,10 @@ export function HELMLtoPHP(sel_text: string): string | null {
 
 export function HELMLtoJSON(sel_text: string): string | null {
     try {
-        const objArr = HELML.decode(sel_text, HELMLLayersList);
+        let objArr = decodeJSONtry2(sel_text);
+        if (objArr === null) {
+            objArr = HELML.decode(sel_text, HELMLLayersList);
+        }
         const json_str = JSON.stringify(objArr, null, '\t');
         return json_str;
     } catch (e) {
@@ -332,36 +373,48 @@ export function removeJSONcomments(json_str: string): string {
       .replace(re1, '')
       .replace(re2, '');
 }
-export function decodeJSONtry(json_str: string) {
+export function decodeJSONtry1(json_str: string) {
     try {
         return JSON.parse(json_str);
     } catch (e) {
         return null;
     }
 }
+export function decodeJSONtry2(json_str: string) {
+    json_str = json_str.trim();
+
+    // try decode as it
+    let objArr = decodeJSONtry1(json_str);
+    if (objArr !== null) {
+        return objArr;
+    }
+    
+    // if not starts With "{" then try add it
+    if (!json_str.startsWith('{')) {
+        json_str = '{' + json_str;
+        if (json_str.endsWith(",")) {
+            json_str = json_str.slice(0, -1);
+        }
+        json_str += '}';
+        // try to decode again
+        objArr = decodeJSONtry1(json_str);
+        if (objArr !== null) {
+            return objArr;
+        }
+    }
+    // try to remove comments
+    json_str = removeJSONcomments(json_str);
+    return decodeJSONtry1(json_str);
+}
 
 export function HELMLfromJSON(sel_text: string): string | null {
-    try {
-        // check selection text is from middle of the JSON
-        sel_text = sel_text.trim();
-        if (sel_text.startsWith('"')) {
-            sel_text = '{' + sel_text;
-            if (sel_text.endsWith(",")) {
-                sel_text = sel_text.slice(0, -1);
-            }
-            sel_text += '}';
-        }
-        let objArr = decodeJSONtry(sel_text);
-        if (objArr === null) {
-            sel_text = removeJSONcomments(sel_text);
-            objArr = JSON.parse(sel_text);
-        }
+    let objArr = decodeJSONtry2(sel_text);
+    if (objArr !== null) {
         const helml_str = HELML.encode(objArr);
         return helml_str;
-    } catch (e) {
-        vscode.window.showErrorMessage('Failed to decode JSON to HELML!');
-        return null;
     }
+    vscode.window.showErrorMessage('Failed to decode JSON to HELML!');
+    return null;
 }
 
 // Hover-controller block
@@ -382,7 +435,7 @@ function exploreLine(src_str: string, word: string): string | null {
     let key = line.key;
     let value = line.value;
 
-    let key_str: string = key;
+    let key_str: string = '`' + key + '`';
     let value_str: string = value;
 
     if (line.is_layer) {
@@ -409,7 +462,7 @@ function exploreLine(src_str: string, word: string): string | null {
         keyIsSpec = true;
         // Next key --
         if (key === '--') {
-            key_str = "*NextNum*";
+            key_str = "`NextNum`";
         } else {
             // -base64
             if (/^[A-Za-z0-9\-_+\/=]*$/.test(key)) {
@@ -434,9 +487,9 @@ function exploreLine(src_str: string, word: string): string | null {
     // Creaters
     if (line.is_creat) {
         if (value === null) {
-            return `Create Array: **${key_str}**`;
+            return `Create Array: ${key_str}`;
         }
-        return `Create LIST: **${key_str}**`;
+        return `Create LIST: ${key_str}`;
     }
 
     // Now value is not empty string. Key:value variants analyzing
@@ -472,7 +525,7 @@ function exploreLine(src_str: string, word: string): string | null {
 
         } else if (!keyIsSpec) {
             // Plain key and Plain value
-            return key + ': ' + value;
+            return `${key_str} = "${value}"`;
         }
     } else if (fc === '"' || fc === "'") {
         value_str = `${fc}*quoted value*"${fc}`;
