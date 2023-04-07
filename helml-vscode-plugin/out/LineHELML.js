@@ -9,6 +9,7 @@ class LineHELML {
         this.value = '';
         this.is_ignore = true;
         this.is_creat = false;
+        this.is_list = false;
         this.is_layer = false;
         this.text = line;
         this.spc_left_cnt = 0;
@@ -58,7 +59,7 @@ class LineHELML {
         const colonIndex = line.indexOf(':', spc_cnt + level + 1);
         const haveColonDiv = colonIndex > (spc_cnt + level);
         const onlyKeyNoDiv = (colonIndex < 0 && (spc_cnt + level) < strlen);
-        const colonDivAtEOL = haveColonDiv && (colonIndex === strlen - 1);
+        this.is_list = haveColonDiv && (colonIndex === strlen - 1);
         if (colonIndex > 0) {
             this.key = line.substring(spc_cnt + level, colonIndex);
             this.value = line.substring(colonIndex + 1);
@@ -71,7 +72,7 @@ class LineHELML {
                 this.is_layer = true;
             }
         }
-        else if (colonDivAtEOL || onlyKeyNoDiv) {
+        else if (this.is_list || onlyKeyNoDiv) {
             this.is_creat = true;
         }
     }
