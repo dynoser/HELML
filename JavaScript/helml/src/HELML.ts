@@ -8,7 +8,7 @@ declare global {
 
 export default class HELML {
     static ENABLE_BONES: boolean = true; // For encode: enable use "next"-keys like :--:
-    static ENABLE_SPC_IDENT: boolean = true; // For encode: add space-indentation at begin of string
+    static ENABLE_SPC_IDENT: number = 1; // For encode: how many spaces will add at begin of string (*level)
     static ENABLE_KEY_UPLINES: boolean = true; // For encode: adding empty string before array-create-keys
     static ENABLE_HASHSYMBOLS: boolean = true; // For encode: adding # after nested-blocks
 
@@ -83,7 +83,7 @@ export default class HELML {
 
             // add space-ident to the left of the key (if need)
             if (HELML.ENABLE_SPC_IDENT && spc_ch === ' ') {
-                ident = spc_ch.repeat(level) + ident;
+                ident = spc_ch.repeat(level * HELML.ENABLE_SPC_IDENT) + ident;
             }
     
             let is_arr = Array.isArray(value);

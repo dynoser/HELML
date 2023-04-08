@@ -35,13 +35,13 @@ exports.styles = {};
 function reloadConfig(event = null) {
     const config = vscode.workspace.getConfiguration('helml');
     const extname = 'helml';
-    const enableident = config.get('enableident');
+    const num_spc_ident = config.get('enableident');
     const enablebones = config.get('enablebones');
     const enableuplines = config.get('enableuplines');
     const enablehashsym = config.get('enablehashsym');
-    if (enableident !== undefined && enableident !== HELML_1.default.ENABLE_SPC_IDENT) {
+    if (num_spc_ident !== undefined && num_spc_ident !== HELML_1.default.ENABLE_SPC_IDENT) {
         // config.update('enableident', enableident, true);
-        HELML_1.default.ENABLE_SPC_IDENT = enableident;
+        HELML_1.default.ENABLE_SPC_IDENT = num_spc_ident;
     }
     if (enablebones !== undefined && enablebones !== HELML_1.default.ENABLE_BONES) {
         // config.update('enablebones', enablebones, true);
@@ -51,7 +51,7 @@ function reloadConfig(event = null) {
         // config.update('enableuplines', enableuplines, true);
         HELML_1.default.ENABLE_KEY_UPLINES = enableuplines;
     }
-    if (enablehashsym !== undefined && enableuplines !== HELML_1.default.ENABLE_HASHSYMBOLS) {
+    if (enablehashsym !== undefined && enablehashsym !== HELML_1.default.ENABLE_HASHSYMBOLS) {
         // config.update('enablehashsym', enablehashsym, true);
         HELML_1.default.ENABLE_HASHSYMBOLS = enablehashsym;
     }

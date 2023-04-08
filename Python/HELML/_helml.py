@@ -18,7 +18,7 @@ class HELML:
     CUSTOM_VALUE_ENCODER = None
     CUSTOM_VALUE_DECODER = None
     
-    ENABLE_SPC_IDENT = True # For encode: add space-indentation at begin of string
+    ENABLE_SPC_IDENT = 1 # For encode: add space-indentation at begin of string
     ENABLE_BONES = True # For encode: enable use "next"-keys like :--:
     ENABLE_KEY_UPLINES = True # For encode: add empty line before create-array-keys
     ENABLE_HASHSYMBOLS = True # For encode: adding # after nested-blocks
@@ -91,7 +91,7 @@ class HELML:
 
              # add space-ident to the left of the key (if need)
             if HELML.ENABLE_SPC_IDENT and spc_ch == ' ':
-                ident = spc_ch * level + ident
+                ident = spc_ch * (level * HELML.ENABLE_SPC_IDENT) + ident
 
             is_arr = isinstance(value, (list, tuple, set))
 

@@ -89,8 +89,9 @@
       "title": "HELML Config",
       "properties": {
         "helml.enableident": {
-          "type": "boolean",
-          "default": true,
+          "type": "number",
+          "default": 1,
+          "enum": [0, 1, 2, 3, 4],
           "description": "HELML encoder will add left-spaces indentation"
         },
         "helml.enablebones": {

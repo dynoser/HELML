@@ -34,7 +34,7 @@ const blocklook = __importStar(require("./blocklook"));
 // Hover-controller block
 function exploreLine(src_str, word) {
     if (src_str.indexOf('~') != -1) {
-        return "Char `~` illegal for HELML, please encode it to base64";
+        return null;
     }
     let line = new LineHELML_1.default(src_str);
     if (line.is_ignore) {

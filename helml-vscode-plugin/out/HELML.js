@@ -48,7 +48,7 @@ class HELML {
             let ident = lvl_ch.repeat(level);
             // add space-ident to the left of the key (if need)
             if (HELML.ENABLE_SPC_IDENT && spc_ch === ' ') {
-                ident = spc_ch.repeat(level) + ident;
+                ident = spc_ch.repeat(level * HELML.ENABLE_SPC_IDENT) + ident;
             }
             let is_arr = Array.isArray(value);
             if (value !== null && (is_arr || typeof value === 'object')) {
@@ -373,7 +373,7 @@ class HELML {
     }
 }
 HELML.ENABLE_BONES = true; // For encode: enable use "next"-keys like :--:
-HELML.ENABLE_SPC_IDENT = true; // For encode: add space-indentation at begin of string
+HELML.ENABLE_SPC_IDENT = 1; // For encode: how many spaces will add at begin of string (*level)
 HELML.ENABLE_KEY_UPLINES = true; // For encode: adding empty string before array-create-keys
 HELML.ENABLE_HASHSYMBOLS = true; // For encode: adding # after nested-blocks
 HELML.CUSTOM_FORMAT_DECODER = null;
