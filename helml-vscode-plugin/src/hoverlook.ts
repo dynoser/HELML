@@ -6,7 +6,7 @@ import * as blocklook from './blocklook';
 // Hover-controller block
 export function exploreLine(src_str: string, word: string): string | null {
     if (src_str.indexOf('~') != -1) {
-        return "Char `~` illegal for HELML, please encode it to base64";
+        return null;
     }
 
     let line = new LineHELML(src_str);
