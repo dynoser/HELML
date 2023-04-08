@@ -26,10 +26,12 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.reloadConfig = exports.HELMLLayersList = void 0;
+exports.reloadConfig = exports.styles = exports.HELMLLayersList = void 0;
 const vscode = __importStar(require("vscode"));
 const HELML_1 = __importDefault(require("./HELML"));
+const blocklook = __importStar(require("./blocklook"));
 exports.HELMLLayersList = ['0'];
+exports.styles = {};
 function reloadConfig(event = null) {
     const config = vscode.workspace.getConfiguration('helml');
     const extname = 'helml';
@@ -38,19 +40,19 @@ function reloadConfig(event = null) {
     const enableuplines = config.get('enableuplines');
     const enablehashsym = config.get('enablehashsym');
     if (enableident !== undefined && enableident !== HELML_1.default.ENABLE_SPC_IDENT) {
-        config.update('enableident', enableident, true);
+        // config.update('enableident', enableident, true);
         HELML_1.default.ENABLE_SPC_IDENT = enableident;
     }
     if (enablebones !== undefined && enablebones !== HELML_1.default.ENABLE_BONES) {
-        config.update('enablebones', enablebones, true);
+        // config.update('enablebones', enablebones, true);
         HELML_1.default.ENABLE_BONES = enablebones;
     }
     if (enableuplines !== undefined && enableuplines !== HELML_1.default.ENABLE_KEY_UPLINES) {
-        config.update('enableuplines', enableuplines, true);
+        // config.update('enableuplines', enableuplines, true);
         HELML_1.default.ENABLE_KEY_UPLINES = enableuplines;
     }
     if (enablehashsym !== undefined && enableuplines !== HELML_1.default.ENABLE_HASHSYMBOLS) {
-        config.update('enablehashsym', enablehashsym, true);
+        // config.update('enablehashsym', enablehashsym, true);
         HELML_1.default.ENABLE_HASHSYMBOLS = enablehashsym;
     }
     if (event === null || event.affectsConfiguration(extname + '.getlayers')) {
@@ -59,6 +61,31 @@ function reloadConfig(event = null) {
             exports.HELMLLayersList = [];
             const layers = getlayers.split(',');
             layers.forEach(layer => exports.HELMLLayersList.push(layer.trim()));
+        }
+    }
+    if (event === null || event.affectsConfiguration(extname + '.style.upkey')) {
+        const upKeyStyleStr = config.get('style.upkey');
+        if (upKeyStyleStr) {
+            const upKeyStyleObj = HELML_1.default.decode(upKeyStyleStr);
+            if (upKeyStyleObj) {
+                exports.styles.upkey = upKeyStyleObj;
+            }
+        }
+    }
+    if (event === null || event.affectsConfiguration(`${extname}.style`)) {
+        const configStyle = config.get('style');
+        if (configStyle) {
+            exports.styles = {};
+            for (const key of Object.keys(configStyle)) {
+                const styleStr = configStyle[key];
+                if (styleStr) {
+                    const styleObj = HELML_1.default.decode(styleStr);
+                    if (styleObj) {
+                        exports.styles[key] = styleObj;
+                    }
+                }
+            }
+            blocklook.reloadConfig();
         }
     }
 }

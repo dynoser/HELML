@@ -26,25 +26,36 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.edit_block_lookup = exports.clearAllDecorations = void 0;
+exports.edit_block_lookup = exports.clearAllDecorations = exports.reloadConfig = void 0;
 const vscode = __importStar(require("vscode"));
+const extconfig = __importStar(require("./extconfig"));
 const LineHELML_1 = __importDefault(require("./LineHELML"));
-// For upKey of HELML-block
-let up_key_decorated_line_num = -1;
-const upKeyListDecoration = vscode.window.createTextEditorDecorationType({
-    border: '1px solid #880; padding: 4px;'
-});
-const upKeyArrDecoration = vscode.window.createTextEditorDecorationType({
-    border: '1px solid #0D0; padding: 4px;'
-});
-//    textDecoration: 'underline #000 dotted; border-bottom: 1px dashed;'
-const oneLevelKeysDecoration = vscode.window.createTextEditorDecorationType({
-    backgroundColor: '#040;'
-});
-//    textDecoration: 'underline #000 waved;',
-const errorKeysDecoration = vscode.window.createTextEditorDecorationType({
-    backgroundColor: '#800'
-});
+// Default style, may be changed in config, parameter helml.style.upkey
+let upKeyListDecoration;
+let upKeyArrDecoration;
+let oneLevelKeysDecoration;
+let subLevelKeysDecoration;
+let errorKeysDecoration;
+function reloadConfig() {
+    upKeyListDecoration = vscode.window.createTextEditorDecorationType(extconfig.styles.upkeylist || extconfig.styles.upkey || extconfig.styles.upkeyarr || {
+        border: '1px solid #880; padding: 4px;'
+    });
+    upKeyArrDecoration = vscode.window.createTextEditorDecorationType(extconfig.styles.upkeyarr || extconfig.styles.upkey || extconfig.styles.upkeylist || {
+        border: '1px solid #0D0; padding: 4px;'
+    });
+    oneLevelKeysDecoration = vscode.window.createTextEditorDecorationType(extconfig.styles.onelevelkeys || {
+        backgroundColor: '#040;'
+    });
+    //    textDecoration: 'underline #000 dotted; border-bottom: 1px dashed;'
+    subLevelKeysDecoration = vscode.window.createTextEditorDecorationType(extconfig.styles.subkeys || {
+        backgroundColor: '#224;'
+    });
+    //    textDecoration: 'underline #000 waved;',
+    errorKeysDecoration = vscode.window.createTextEditorDecorationType({
+        backgroundColor: '#800'
+    });
+}
+exports.reloadConfig = reloadConfig;
 function clearAllDecorations(editor) {
     editor.setDecorations(upKeyListDecoration, []);
     editor.setDecorations(upKeyArrDecoration, []);
@@ -52,24 +63,31 @@ function clearAllDecorations(editor) {
     editor.setDecorations(errorKeysDecoration, []);
 }
 exports.clearAllDecorations = clearAllDecorations;
-let currLevelLinesArray = [];
-let newLevelLinesArray = [];
-function initOneLevelDeco() {
-    newLevelLinesArray = [];
+let oneLevelLinesArray = [];
+let subLevelLinesArray = [];
+function initLevelLinesDecor() {
+    oneLevelLinesArray = [];
+    subLevelLinesArray = [];
 }
 function pushOneLevelLine(cLineNumber, cLineHELML, cListVS) {
     let positionStartKey = cListVS.range.start.translate(0, cLineHELML.spc_left_cnt + cLineHELML.level);
     let positionAfterKey = positionStartKey.translate(0, cLineHELML.key.length);
     const range = new vscode.Range(positionStartKey, positionAfterKey);
-    newLevelLinesArray.push([cLineNumber, range, cLineHELML]);
+    oneLevelLinesArray.push([cLineNumber, range, cLineHELML]);
 }
-function showOneLevelDeco(editor, is_list) {
+function pushSubLevelLine(cLineNumber, cLineHELML, cListVS) {
+    let positionStartKey = cListVS.range.start.translate(0, cLineHELML.spc_left_cnt + cLineHELML.level);
+    let positionAfterKey = positionStartKey.translate(0, cLineHELML.key.length);
+    const range = new vscode.Range(positionStartKey, positionAfterKey);
+    subLevelLinesArray.push([cLineNumber, range, cLineHELML]);
+}
+function showOneLevelDecor(editor, is_list) {
     let cLineNumber;
     let range;
     let cLineHELML;
     const oneKeyLevelDecorations = [];
     //const oneKeyErrDecorations = [];
-    for (const arr of newLevelLinesArray) {
+    for (const arr of oneLevelLinesArray) {
         [cLineNumber, range, cLineHELML] = arr;
         // const currKey = cLineHELML.key;
         // if (is_list && (currKey.charAt(0) !== '-' && !(/^-?\d+(.\d+)?$/.test(currKey)))) {
@@ -80,6 +98,17 @@ function showOneLevelDeco(editor, is_list) {
     }
     editor.setDecorations(oneLevelKeysDecoration, oneKeyLevelDecorations);
     // editor.setDecorations(errorKeysDecoration, oneKeyErrDecorations);
+}
+function showSubLevelDecor(editor) {
+    let cLineNumber;
+    let range;
+    let cLineHELML;
+    const subKeyLevelDecorations = [];
+    for (const arr of subLevelLinesArray) {
+        [cLineNumber, range, cLineHELML] = arr;
+        subKeyLevelDecorations.push({ range });
+    }
+    editor.setDecorations(subLevelKeysDecoration, subKeyLevelDecorations);
 }
 function setUpKeyDecorator(editor, range = null, up_key_line_new_num = -1, is_list = true) {
     if (setUpKeyDecorator.up_key_decorated_is_list !== is_list) {
@@ -103,15 +132,17 @@ function edit_block_lookup(fromLineNumber) {
     if (!editor) {
         return;
     }
-    initOneLevelDeco();
+    initLevelLinesDecor();
     const { document, selection } = editor;
     let sel_text = document.getText(selection);
     let currLineNumber = -1;
-    let currLineVS;
     let currLineHELML;
+    let currLineVS;
     let upKeyLineNumber = -1;
     let upKeyLineHELML;
+    let upKeyRange;
     let downLineNumber = -1;
+    let isHELML = true;
     // Lookup CurrLine
     let walkLineNumber = fromLineNumber;
     do {
@@ -120,6 +151,10 @@ function edit_block_lookup(fromLineNumber) {
         currLineHELML = new LineHELML_1.default(currLineVS.text);
         if (!currLineHELML.is_ignore) {
             // Line is not empty, not comment
+            if (currLineHELML.key.indexOf(' ') != -1)
+                break; //space or quote in key means not a HELML
+            if (currLineHELML.key.indexOf('"') != -1)
+                break;
             currLineNumber = walkLineNumber;
             break;
         }
@@ -130,9 +165,12 @@ function edit_block_lookup(fromLineNumber) {
         let currWorkLevel = currLineHELML.level;
         let walkLineVS;
         let walkLineHELML;
-        while (--walkLineNumber >= 0) {
+        for (; walkLineNumber >= 0; walkLineNumber--) {
             walkLineVS = document.lineAt(walkLineNumber);
             walkLineHELML = new LineHELML_1.default(walkLineVS.text);
+            if (walkLineHELML.is_ignore) {
+                continue;
+            }
             if (walkLineHELML.level === currWorkLevel) {
                 pushOneLevelLine(walkLineNumber, walkLineHELML, walkLineVS);
             }
@@ -142,10 +180,13 @@ function edit_block_lookup(fromLineNumber) {
                     upKeyLineNumber = walkLineNumber;
                     upKeyLineHELML = walkLineHELML;
                     // upKey decorating
-                    const range = new vscode.Range(walkLineVS.range.start, walkLineVS.range.end);
-                    setUpKeyDecorator(editor, range, walkLineNumber + 1, upKeyLineHELML.is_list);
+                    upKeyRange = new vscode.Range(walkLineVS.range.start, walkLineVS.range.end);
                 }
                 break;
+            }
+            else if (walkLineHELML.level === currWorkLevel + 1) {
+                // if level up at one step
+                pushSubLevelLine(walkLineNumber, walkLineHELML, walkLineVS);
             }
         }
         // walk from current line to down
@@ -162,15 +203,28 @@ function edit_block_lookup(fromLineNumber) {
             else if (walkLineHELML.level < currWorkLevel) { // if level down
                 break;
             }
+            else if (walkLineHELML.level === currWorkLevel + 1) { // if level up at one step
+                pushSubLevelLine(walkLineNumber, walkLineHELML, walkLineVS);
+            }
         }
+    }
+    else {
+        isHELML = false;
     }
     if (upKeyLineNumber < 0) {
         // if upkey not found, remove upKeyDecorators
         setUpKeyDecorator(editor);
     }
-    showOneLevelDeco(editor, currLineHELML.is_list);
+    else {
+        setUpKeyDecorator(editor, upKeyRange, upKeyLineNumber, upKeyLineHELML === null || upKeyLineHELML === void 0 ? void 0 : upKeyLineHELML.is_list);
+    }
+    if (isHELML) {
+        showOneLevelDecor(editor, currLineHELML.is_list);
+        showSubLevelDecor(editor);
+    }
     return {
         sel_text: sel_text,
+        isHELML: isHELML,
         currLineNumber: currLineNumber,
         currLineVS: currLineVS,
         currLineHELML: currLineHELML,

@@ -45,7 +45,7 @@ class HELML:
         
         HELML._encode(arr, results_arr, 0, lvl_ch, spc_ch, is_list)
 
-        if url_mode and len(results_arr) == 1:
+        if url_mode:
             results_arr.append('')
 
         return str_imp.join(results_arr)
@@ -147,7 +147,7 @@ class HELML:
         # Explode src_rows to lines
         for exploder_ch in ["\n", "\r", "~"]:
             if exploder_ch in src_rows:
-                if "~" == exploder_ch:
+                if "~" == exploder_ch and src_rows[-1] == "~":
                     lvl_ch = "."
                     spc_ch = "_"
                 break

@@ -16,7 +16,7 @@ class HELML {
             is_list = keys.every((key, index) => key === expectedNumKeys[index]);
         }
         HELML._encode(arr, results_arr, 0, lvl_ch, spc_ch, is_list);
-        if (url_mode && results_arr.length == 1) {
+        if (url_mode) {
             results_arr.push('');
         }
         return results_arr.join(str_imp);
@@ -95,7 +95,7 @@ class HELML {
         let exploder_ch = "\n";
         for (exploder_ch of ["\n", "~", "\r"]) {
             if (src_rows.indexOf(exploder_ch) !== -1) {
-                if (exploder_ch === "~") {
+                if (exploder_ch === "~" && src_rows.endsWith('~')) {
                     lvl_ch = '.';
                     spc_ch = '_';
                 }
