@@ -2,7 +2,7 @@
   "name": "helml",
   "displayName": "helml",
   "description": "Plugin to encode/decode HELML data and syntaxes highliting",
-  "version": "0.0.26",
+  "version": "0.0.27",
   "publisher": "dynoser",
   "license": "MIT",
   "repository": {
@@ -13,15 +13,17 @@
     "vscode": "^1.65.0"
   },
   "categories": [
-    "Other"
+    "Programming Languages", "Formatters", "Other"
   ],
   "icon": "images/icon.png",
   "activationEvents": [
     "onLanguage:json",
-    "onLanguage:jsonc"
+    "onLanguage:jsonc",
+    "onWebviewPanel:helml"
   ],
   "main": "./out/extension.js",
   "browser": "./out/web/extension.js",
+  "web": "out/web/extension.js",
   "contributes": {
     "languages": [
       {
