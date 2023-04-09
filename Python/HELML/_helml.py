@@ -26,18 +26,19 @@ class HELML:
     @staticmethod
     def encode(
         arr: Union[dict, list, tuple, set],
-        url_mode: bool = False
+        one_line_mode: int = 0
     ) -> str:
         """
         Encode array to HELML string.
-        
+
         :param arr: Input data structure (list, dict, or tuple) to be encoded.
-        :param url_mode: A boolean indicating if the URL mode should be used.
+        :param one_line_mode: The encoding mode to use (0-multi-line, 1-URL-mode, 2-LINE-mode)
         :return: Encoded HELML string.
         """
         results_arr = []
 
-        str_imp = "~" if url_mode else "\n"
+        str_imp = "~" if one_line_mode else "\n"
+        url_mode = one_line_mode == 1
         lvl_ch = "." if url_mode else ":"
         spc_ch = "_" if url_mode else " "
 
@@ -47,6 +48,11 @@ class HELML:
 
         if url_mode:
             results_arr.append('')
+        elif one_line_mode:
+            # Remove whitespace from beginning and end of each string
+            results_arr = [s.strip() for s in results_arr]
+            # Remove empty strings and comments that start with '#'
+            results_arr = [s for s in results_arr if s and not s.startswith('#')]
 
         return str_imp.join(results_arr)
     

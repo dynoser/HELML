@@ -144,7 +144,7 @@ function HELMLtoURL(sel_text) {
         if (objArr === null) {
             objArr = HELML_1.default.decode(sel_text, extconfig.HELMLLayersList);
         }
-        const code_str = HELML_1.default.encode(objArr, 2);
+        const code_str = HELML_1.default.encode(objArr, 1);
         return code_str;
     }
     catch (e) {
@@ -159,7 +159,7 @@ function HELMLtoLINE(sel_text) {
         if (objArr === null) {
             objArr = HELML_1.default.decode(sel_text, extconfig.HELMLLayersList);
         }
-        const code_str = HELML_1.default.encode(objArr, 1);
+        const code_str = HELML_1.default.encode(objArr, 2);
         return code_str;
     }
     catch (e) {

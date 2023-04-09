@@ -148,7 +148,7 @@ export function HELMLtoURL(sel_text: string): string | null {
         if (objArr === null) {
             objArr = HELML.decode(sel_text, extconfig.HELMLLayersList);
         }
-        const code_str = HELML.encode(objArr, 2);
+        const code_str = HELML.encode(objArr, 1);
         return code_str;
     } catch(e: any) {
         vscode.window.showErrorMessage(`Failed encode to HELML-url: ${e.message}`);
@@ -161,7 +161,7 @@ export function HELMLtoLINE(sel_text: string): string | null {
         if (objArr === null) {
             objArr = HELML.decode(sel_text, extconfig.HELMLLayersList);
         }
-        const code_str = HELML.encode(objArr, 1);
+        const code_str = HELML.encode(objArr, 2);
         return code_str;
     } catch(e: any) {
         vscode.window.showErrorMessage(`Failed encode to HELML-url: ${e.message}`);

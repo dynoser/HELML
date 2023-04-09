@@ -6,8 +6,8 @@ class HELML {
      * @param {any} arr - The array to encode.
      * @param {number} [one_line_mode=0] - The encoding mode to use:
      *     - 0 - regular multi-line encoding
-     *     - 1 - single-line encoding with trimmed strings and removed empty and comment lines
-     *     - 2 - URL encoding with dot and underscore separators
+     *     - 1 - URL encoding with dot and underscore separators
+     *     - 2 - single-line encoding with trimmed strings and removed empty and comment lines
      * @returns {string} The encoded HELM-like string.
      */
     static encode(arr, one_line_mode = 0) {
@@ -16,7 +16,7 @@ class HELML {
         arr = HELML.iterablize(arr);
         // one-line-mode selector
         let str_imp = one_line_mode ? "~" : "\n";
-        let url_mode = one_line_mode > 1;
+        let url_mode = one_line_mode === 1;
         let lvl_ch = url_mode ? '.' : ':';
         let spc_ch = url_mode ? '_' : ' ';
         // is the object a list with sequential keys?

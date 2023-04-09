@@ -64,21 +64,21 @@ class TestHELML(unittest.TestCase):
     def test_encode_decode_url_mode(self):
         for _ in range(50):
             original_data = generate_nested_dict()
-            encoded_data = HELML.encode(original_data, True)
+            encoded_data = HELML.encode(original_data, 1)
             decoded_data = HELML.decode(encoded_data)
             assert decoded_data == original_data, f"Error: source data {original_data}, after encode-decode {decoded_data}"
 
     def test_encode_decode_lines_mode(self):
         for _ in range(50):
             original_data = generate_nested_dict()
-            encoded_data = HELML.encode(original_data, False)
+            encoded_data = HELML.encode(original_data, 0)
             decoded_data = HELML.decode(encoded_data)
             assert decoded_data == original_data, f"Error: source data {original_data}, after encode-decode {decoded_data}"
 
     def test_console_php_subprocess(self):
         for _ in range(100):
             original_data = generate_nested_dict()
-            encoded_data = HELML.encode(original_data, True)
+            encoded_data = HELML.encode(original_data, 1)
             result = subprocess.run(['php', 'PHP/console_test.php', encoded_data], stdout=subprocess.PIPE)
             encoded_data = result.stdout.decode('utf-8').strip()
             decoded_data = HELML.decode(encoded_data)
@@ -96,7 +96,7 @@ class TestHELML(unittest.TestCase):
             self.assertIsInstance(arr, dict)
 
             # encode to url-mode and decode back
-            row = HELML.encode(arr, True)
+            row = HELML.encode(arr, 1)
             a2 = HELML.decode(row)
             assert a2 == arr, "Different decode results"
 
@@ -183,12 +183,18 @@ class TestHELML(unittest.TestCase):
 
         assert decoded_data == expected_data, f"Error: decoded data {decoded_data}, expected data {expected_data}"
 
-        encoded_data = HELML.encode(decoded_data, True)
         expected_url = "A.~.0.__0~.1.__1~.2.~..0._In0~..1.__888~.3._Four~.4.-~B._B-key~C._C-key~D._D-key~TR.__T~FL.__F~NO.__N~"
+        encoded_data = HELML.encode(decoded_data, 1)
+        assert encoded_data == expected_url, f"Error: URL-encoded data {encoded_data}, expected data {expected_url}"
+
+        encoded_data = HELML.encode(decoded_data, 2)
+        expected_url = 'A:~:--:  0~:--:  1~:--:~::--: In0~::--:  888~:--: Four~:--:-~B: B-key~C: C-key~D: D-key~TR:  T~FL:  F~NO:  N'
         assert encoded_data == expected_url, f"Error: URL-encoded data {encoded_data}, expected data {expected_url}"
 
         decoded_data = HELML.decode(encoded_data)
         assert decoded_data == expected_data, f"Error: decoded data {decoded_data}, expected data {expected_data}"
+
+
     
     def test_utf8_codes(self):
         h_ml = '''
@@ -196,12 +202,12 @@ class TestHELML(unittest.TestCase):
         фыва: пролджэ
         '''
         first_dec = HELML.decode(h_ml)
-        encoded_data = HELML.encode(first_dec, False)
+        encoded_data = HELML.encode(first_dec, 0)
         second_dec = HELML.decode(encoded_data)
         assert first_dec == second_dec, f"Error: first_dec {first_dec}, second_dec {second_dec}"
 
 
-        encoded_data = HELML.encode(first_dec, True)
+        encoded_data = HELML.encode(first_dec, 1)
         second_dec = HELML.decode(encoded_data)
         assert first_dec == second_dec, f"Error URL in mode: first_dec {first_dec}, second_dec {second_dec}"
 
@@ -266,7 +272,7 @@ class TestHELML(unittest.TestCase):
             "-Минус в начале",
             "-"
         ]
-        encoded_data = HELML.encode(arr, False)
+        encoded_data = HELML.encode(arr, 0)
         expected_enc = """\
 --: Simple value
 --:-Cg
