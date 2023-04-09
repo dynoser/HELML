@@ -2,104 +2,102 @@ package gohelml
 
 import (
 	"encoding/base64"
-	"errors"
-	"fmt"
 	"strconv"
 	"strings"
+	"math"
 )
 
-type SpecTypeValues struct {
-	N   *interface{}
-	U   *interface{}
-	T   bool
-	F   bool
-	NAN float64
-	INF float64
-	NIF float64
+type HELML struct {
+	CUSTOM_FORMAT_DECODER func(value string, spc_ch string) interface{}
+	CUSTOM_VALUE_DECODER   func(value string, spc_ch string) interface{}
 }
 
-var specTypeValues = SpecTypeValues{
-	N:   nil,
-	U:   nil,
-	T:   true,
-	F:   false,
-	NAN: math.NaN(),
-	INF: math.Inf(1),
-	NIF: math.Inf(-1),
+var SPEC_TYPE_VALUES = map[string]interface{}{
+	"N":   nil,
+	"U":   (*interface{})(nil),
+	"T":   true,
+	"F":   false,
+	"NAN": math.NaN(),
+	"INF": math.Inf(1),
+	"NIF": math.Inf(-1),
 }
 
-type CustomValueDecoder func(string, string) (interface{}, error)
-type CustomFormatDecoder func(string) (interface{}, error)
-
-var customValueDecoder CustomValueDecoder = nil
-var customFormatDecoder CustomFormatDecoder = nil
-
-func Decode(src interface{}, layersList []int) (map[string]interface{}, error) {
-	var lvlCh, spcCh string = ":", " "
-	var layerInit int = 0
-	var layerCurr int = layerInit
-	var minLevel int = -1
-
-	layerMap := make(map[int]bool)
-	for _, layer := range layersList {
-		layerMap[layer] = true
+func (h *HELML) Decode(src_rows string, get_layers ...interface{}) map[string]interface{} {
+	valueDecoFun := h.CUSTOM_VALUE_DECODER
+	if valueDecoFun == nil {
+		valueDecoFun = h.ValueDecoder
 	}
 
-	layerMap[layerInit] = true
-	allLayers := make(map[int]bool)
-	allLayers[layerInit] = true
+	layer_init := "0"
+	layer_curr := layer_init
+	all_layers := map[string]struct{}{"0": {}}
 
-	var strArr []string
-
-	switch src := src.(type) {
-	case string:
-		exploderChs := []string{"\n", "\r", "~"}
-		for _, exploderCh := range exploderChs {
-			if strings.Contains(src, exploderCh) {
-				if exploderCh == "~" && strings.HasSuffix(src, "~") {
-					lvlCh = "."
-					spcCh = "_"
-				}
-				strArr = strings.Split(src, exploderCh)
-				break
-			}
+	layers_list := map[string]struct{}{layer_init: {}}
+	for _, item := range get_layers {
+		switch v := item.(type) {
+		case int:
+			layers_list[strconv.Itoa(v)] = struct{}{}
+		case string:
+			layers_list[v] = struct{}{}
 		}
-	case []string:
-		strArr = src
-	default:
-		return nil, errors.New("Array or String required")
 	}
 
-	result := make(map[string]interface{})
-	stack := make([]string, 0)
+	lvl_ch := ":"
+	spc_ch := " "
+	exploder_ch := "\n"
 
-	for _, line := range strArr {
+	for _, ch := range []string{"\n", "~", "\r"} {
+		if strings.Contains(src_rows, ch) {
+			exploder_ch = ch
+			if ch == "~" && strings.HasSuffix(src_rows, "~") {
+				lvl_ch = "."
+				spc_ch = "_"
+			}
+			break
+		}
+	}
+
+	str_arr := strings.Split(src_rows, exploder_ch)
+
+	result := map[string]interface{}{}
+	stack := []string{}
+
+	min_level := -1
+
+	for _, line := range str_arr {
 		line = strings.TrimSpace(line)
-		if len(line) == 0 || strings.HasPrefix(line, "#") {
+
+		if len(line) == 0 || line[0] == '#' {
 			continue
 		}
 
-		level := strings.Count(line, lvlCh)
-		line = strings.TrimPrefix(line, strings.Repeat(lvlCh, level))
-
-		parts := strings.SplitN(line, lvlCh, 2)
-		key := parts[0]
-		if key == "" {
-			key = "0"
+		level := 0
+		for level < len(line) && line[level] == lvl_ch[0] {
+			level++
 		}
+
+		if level > 0 {
+			line = line[level:]
+		}
+
+		firstDiv := strings.Index(line, lvl_ch)
+		key := ""
 		value := ""
-		if len(parts) > 1 {
-			value = parts[1]
+		if firstDiv == -1 {
+			key = line
+		} else {
+			key = line[:firstDiv]
+			value = line[firstDiv+1:]
 		}
 
-		if minLevel < 0 || minLevel > level {
-			minLevel = level
+		if min_level < 0 || min_level > level {
+			min_level = level
 		}
 
-		extraKeysCnt := len(stack) - level + minLevel
-		if extraKeysCnt > 0 {
-			stack = stack[:len(stack)-extraKeysCnt]
-			layerCurr = layerInit
+		extra_keys_cnt := len(stack) - (level - min_level)
+		if extra_keys_cnt > 0 {
+			stack = stack[:len(stack)-extra_keys_cnt]
+			layer_curr = layer_init
 		}
 
 		parent := result
@@ -107,94 +105,130 @@ func Decode(src interface{}, layersList []int) (map[string]interface{}, error) {
 			parent = parent[parentKey].(map[string]interface{})
 		}
 
-		if strings.HasPrefix(key, "-") {
-			if key == "--" {
-				key = fmt.Sprintf("%d", len(parent))
-			} else if key == "-+" {
-				if value != "" {
-					layerCurr, _ = strconv.Atoi(value)
-				} else {
-					if _, ok := allLayers[layerCurr]; ok {
-						layerCurr++
+		if key[0] == '-' {
+			if key == "--" || key == "---" {
+				switch p := parent.(type) {
+				case map[string]interface{}:
+					key = strconv.Itoa(len(p))
+				default:
+					key = "0"
+				}
+			} else if key == "-+" || key == "-++" {
+				value = strings.TrimSpace(value)
+				if key == "-++" {
+					if value != "" {
+						layer_init = value
+					}
+					layer_curr = layer_init
+				} else if key == "-+" {
+				
+					if value == "" {
+						layer_curr = layer_init
+					} else {
+						layer_curr = value
 					}
 				}
-				allLayers[layerCurr] = true
+				all_layers[layer_curr] = struct{}{}
 				continue
 			} else {
-				decodedKey, err := base64Udecode(key[1:])
+				decoded_key, err := h.base64Udecode(key[1:])
 				if err == nil {
-					key = decodedKey
+					key = decoded_key
 				}
 			}
 		}
 
 		if value == "" {
-			parent[key] = make(map[string]interface{})
-			stack = append(stack, key)
-		} else if layerMap[layerCurr] {
-			var decodedValue interface{}
-			var err error
-
-			if customValueDecoder != nil {
-				decodedValue, err = customValueDecoder(value, spcCh)
+			if parent[key] == nil {
+				parent[key] = map[string]interface{}{}
+				stack = append(stack, key)
+				layer_curr = layer_init
 			} else {
-				decodedValue, err = valueDecoder(value, spcCh)
+				parent[key] = []interface{}{}
 			}
-
-			if err != nil {
-				return nil, err
-			}
-
-			parent[key] = decodedValue
+		} else if _, ok := layers_list[layer_curr]; ok {
+			parent[key] = valueDecoFun(value, spc_ch)
 		}
 	}
 
-	if len(allLayers) > 1 {
-		keys := make([]int, 0, len(allLayers))
-		for k := range allLayers {
-			keys = append(keys, k)
-		}
-		result["_layers"] = keys
+	if len(all_layers) > 1 {
+		result["_layers"] = keys(all_layers)
 	}
 
-	return result, nil
+	return result
 }
 
-func valueDecoder(encodedValue, spcCh string) (interface{}, error) {
-	firstChar := string(encodedValue[0])
-	if firstChar == spcCh {
-		if !strings.HasPrefix(encodedValue, spcCh+spcCh) {
-			return encodedValue[1:], nil
+func (h *HELML) ValueDecoder(encodedValue string, spc_ch string) interface{} {
+	fc := encodedValue[0]
+	if spc_ch[0] == fc {
+		if encodedValue[:2] != spc_ch+spc_ch {
+			return encodedValue[1:]
 		}
-
-		slicedValue := strings.TrimLeft(encodedValue, spcCh)
-		if num, err := strconv.ParseFloat(slicedValue, 64); err == nil {
-			return num, nil
-		} else if val, ok := specTypeValues[slicedValue]; ok {
-			return val, nil
-		} else if customFormatDecoder != nil {
-			return customFormatDecoder(encodedValue)
+		slicedValue := encodedValue[2:]
+		if val, ok := SPEC_TYPE_VALUES[slicedValue]; ok {
+			return val
 		}
-
-		return encodedValue, nil
-	} else if firstChar == "\"" || firstChar == "'" {
-		trimmedValue := encodedValue[1 : len(encodedValue)-1]
-		if firstChar == "'" {
-			return trimmedValue, nil
+		if _, err := strconv.ParseFloat(slicedValue, 64); err == nil {
+			return strconv.ParseFloat(slicedValue, 64)
 		}
-		return strconv.Unquote("\"" + trimmedValue + "\"")
-	} else if firstChar == "-" {
-		return base64Udecode(encodedValue[1:])
+		if h.CUSTOM_FORMAT_DECODER != nil {
+			return h.CUSTOM_FORMAT_DECODER(encodedValue, spc_ch)
+		}
+		return slicedValue
+	} else if fc == '"' || fc == '\'' {
+		encodedValue = encodedValue[1 : len(encodedValue)-1]
+		if fc == '"' {
+			return h.stripcslashes(encodedValue)
+		}
+		return encodedValue
+	} else if fc == '-' {
+		encodedValue = encodedValue[1:]
+	} else if h.CUSTOM_FORMAT_DECODER != nil {
+		return h.CUSTOM_FORMAT_DECODER(encodedValue, spc_ch)
 	}
-
-	if customFormatDecoder != nil {
-		return customFormatDecoder(encodedValue)
-	}
-
-	return base64Udecode(encodedValue)
+	decoded, _ := h.base64Udecode(encodedValue)
+	return decoded
 }
 
-func base64Udecode(str string) (string, error) {
+func (h *HELML) base64Uencode(str string) string {
+	base64Str := base64.URLEncoding.EncodeToString([]byte(str))
+	return strings.TrimRight(base64Str, "=")
+}
+
+func (h *HELML) base64Udecode(str string) (string, error) {
+	for len(str)%4 != 0 {
+		str += "="
+	}
+
 	data, err := base64.URLEncoding.DecodeString(str)
-	return string(data), err
+	if err != nil {
+		return "", err
+	}
+	return string(data), nil
+}
+
+func (h *HELML) stripcslashes(str string) string {
+	controlCharsMap := map[string]string{
+		"\\n": "\n",
+		"\\t": "\t",
+		"\\r": "\r",
+		"\\b": "\b",
+		"\\f": "\f",
+		"\\v": "\v",
+		"\\0": "\x00",
+		"\\\\": "\\",
+	}
+	for k, v := range controlCharsMap {
+		str = strings.Replace(str, k, v, -1)
+	}
+	return str
+}
+
+func keys(m map[string]struct{}) []string {
+	keys := make([]string, 0, len(m))
+	for k := range m {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	return keys
 }
