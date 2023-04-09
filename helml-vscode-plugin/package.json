@@ -2,7 +2,7 @@
   "name": "helml",
   "displayName": "helml",
   "description": "Plugin to encode/decode HELML data and syntaxes highliting",
-  "version": "0.0.27",
+  "version": "0.0.28",
   "publisher": "dynoser",
   "license": "MIT",
   "repository": {
@@ -19,6 +19,7 @@
   "activationEvents": [
     "onLanguage:json",
     "onLanguage:jsonc",
+    "onLanguage:plaintext",
     "onWebviewPanel:helml"
   ],
   "main": "./out/extension.js",
@@ -68,6 +69,10 @@
       {
         "command": "helml.fromBase64url",
         "title": "fromBase64url()"
+      },
+      {
+        "command": "helml.toLINE",
+        "title": "HELML to OneLINE-mode()"
       },
       {
         "command": "helml.toURL",

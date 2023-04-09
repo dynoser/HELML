@@ -36,13 +36,13 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.HELMLfromJSON = exports.HELMLtoJSON = exports.HELMLtoPHP = exports.HELMLtoPython = exports.HELMLtoURL = exports.SELECTIONfromBase64url = exports.SELECTIONtoBase64url = exports.deactivate = exports.activate = void 0;
+exports.HELMLfromJSON = exports.HELMLtoJSON = exports.HELMLtoPHP = exports.HELMLtoPython = exports.HELMLtoLINE = exports.HELMLtoURL = exports.SELECTIONfromBase64url = exports.SELECTIONtoBase64url = exports.deactivate = exports.activate = void 0;
 const vscode = __importStar(require("vscode"));
 const HELML_1 = __importDefault(require("./HELML"));
 const extconfig = __importStar(require("./extconfig"));
 const onchangeshook = __importStar(require("./onchangeshook"));
 const hoverlook = __importStar(require("./hoverlook"));
-const errlinesdecor = __importStar(require("./errlinesdecor"));
+//import * as errlinesdecor from './errlinesdecor';
 const blocklook = __importStar(require("./blocklook"));
 const fromjson = __importStar(require("./fromjson"));
 const phparr_1 = __importDefault(require("./phparr"));
@@ -66,7 +66,7 @@ function cre_sel_conv_fn(converter_fn) {
                 editBuilder.replace(selection, convertedText);
             });
             blocklook.clearAllDecorations(editor);
-            errlinesdecor.clearAllDecorations(editor);
+            //errlinesdecor.clearAllDecorations(editor);
         }
     };
 }
@@ -79,6 +79,7 @@ function activate(context) {
     context.subscriptions.push(vscode.commands.registerCommand('helml.toBase64url', cre_sel_conv_fn(SELECTIONtoBase64url)));
     context.subscriptions.push(vscode.commands.registerCommand('helml.fromBase64url', cre_sel_conv_fn(SELECTIONfromBase64url)));
     context.subscriptions.push(vscode.commands.registerCommand('helml.toURL', cre_sel_conv_fn(HELMLtoURL)));
+    context.subscriptions.push(vscode.commands.registerCommand('helml.toLINE', cre_sel_conv_fn(HELMLtoLINE)));
     context.subscriptions.push(vscode.commands.registerCommand('helml.fromJSONDoc', () => __awaiter(this, void 0, void 0, function* () {
         const editor = vscode.window.activeTextEditor;
         if (!editor) {
@@ -108,14 +109,8 @@ function activate(context) {
         }
         vscode.window.showTextDocument(newFile);
     })));
-    context.subscriptions.push(onchangeshook.disposable);
-    // context.subscriptions.push(
-    //     vscode.window.onDidChangeActiveTextEditor((editor) => {
-    //         if (editor) {
-    //             errlinesdecor.highlightErrors(editor);
-    //         }
-    //     })
-    // );
+    context.subscriptions.push(onchangeshook.onChangeTextDisposable);
+    context.subscriptions.push(onchangeshook.onChangeEventDisposable(context));
     vscode.languages.registerHoverProvider('helml', hoverlook.hoverProvider);
 }
 exports.activate = activate;
@@ -149,7 +144,7 @@ function HELMLtoURL(sel_text) {
         if (objArr === null) {
             objArr = HELML_1.default.decode(sel_text, extconfig.HELMLLayersList);
         }
-        const code_str = HELML_1.default.encode(objArr, true);
+        const code_str = HELML_1.default.encode(objArr, 2);
         return code_str;
     }
     catch (e) {
@@ -158,6 +153,21 @@ function HELMLtoURL(sel_text) {
     }
 }
 exports.HELMLtoURL = HELMLtoURL;
+function HELMLtoLINE(sel_text) {
+    try {
+        let objArr = fromjson.decodeJSONtry2(sel_text);
+        if (objArr === null) {
+            objArr = HELML_1.default.decode(sel_text, extconfig.HELMLLayersList);
+        }
+        const code_str = HELML_1.default.encode(objArr, 1);
+        return code_str;
+    }
+    catch (e) {
+        vscode.window.showErrorMessage(`Failed encode to HELML-url: ${e.message}`);
+        return null;
+    }
+}
+exports.HELMLtoLINE = HELMLtoLINE;
 function HELMLtoPython(sel_text) {
     try {
         let objArr = fromjson.decodeJSONtry2(sel_text);

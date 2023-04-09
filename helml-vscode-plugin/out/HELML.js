@@ -1,11 +1,22 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 class HELML {
-    static encode(arr, url_mode = false) {
+    /**
+     * Encodes the specified array into a HELM.
+     * @param {any} arr - The array to encode.
+     * @param {number} [one_line_mode=0] - The encoding mode to use:
+     *     - 0 - regular multi-line encoding
+     *     - 1 - single-line encoding with trimmed strings and removed empty and comment lines
+     *     - 2 - URL encoding with dot and underscore separators
+     * @returns {string} The encoded HELM-like string.
+     */
+    static encode(arr, one_line_mode = 0) {
         let results_arr = [];
         // Check arr and convert to iterable (if possible)
         arr = HELML.iterablize(arr);
-        let str_imp = url_mode ? "~" : "\n";
+        // one-line-mode selector
+        let str_imp = one_line_mode ? "~" : "\n";
+        let url_mode = one_line_mode > 1;
         let lvl_ch = url_mode ? '.' : ':';
         let spc_ch = url_mode ? '_' : ' ';
         // is the object a list with sequential keys?
@@ -18,6 +29,11 @@ class HELML {
         HELML._encode(arr, results_arr, 0, lvl_ch, spc_ch, is_list);
         if (url_mode) {
             results_arr.push('');
+        }
+        else if (one_line_mode) {
+            results_arr = results_arr
+                .map((str) => str.trim()) // remove spaces
+                .filter((str) => str !== "" && !str.startsWith("#")); // remove all empty strings and comments
         }
         return results_arr.join(str_imp);
     }

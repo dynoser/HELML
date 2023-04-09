@@ -7,7 +7,7 @@ import * as extconfig from './extconfig';
 
 import * as onchangeshook from './onchangeshook';
 import * as hoverlook from './hoverlook';
-import * as errlinesdecor from './errlinesdecor';
+//import * as errlinesdecor from './errlinesdecor';
 import * as blocklook from './blocklook';
 
 import * as fromjson from './fromjson';
@@ -37,7 +37,7 @@ function cre_sel_conv_fn(converter_fn: (text: string) => string | null) {
                 editBuilder.replace(selection, convertedText);
             });
             blocklook.clearAllDecorations(editor);
-            errlinesdecor.clearAllDecorations(editor);
+            //errlinesdecor.clearAllDecorations(editor);
         }
     };
 }
@@ -72,6 +72,10 @@ export function activate(context: vscode.ExtensionContext) {
 
     context.subscriptions.push(
         vscode.commands.registerCommand('helml.toURL', cre_sel_conv_fn(HELMLtoURL))
+    );
+
+    context.subscriptions.push(
+        vscode.commands.registerCommand('helml.toLINE', cre_sel_conv_fn(HELMLtoLINE))
     );
 
     context.subscriptions.push(
@@ -110,15 +114,8 @@ export function activate(context: vscode.ExtensionContext) {
         })
     );
 
-    context.subscriptions.push(onchangeshook.disposable);
-
-    // context.subscriptions.push(
-    //     vscode.window.onDidChangeActiveTextEditor((editor) => {
-    //         if (editor) {
-    //             errlinesdecor.highlightErrors(editor);
-    //         }
-    //     })
-    // );
+    context.subscriptions.push(onchangeshook.onChangeTextDisposable);
+    context.subscriptions.push(onchangeshook.onChangeEventDisposable(context));
 
     vscode.languages.registerHoverProvider('helml', hoverlook.hoverProvider);
 }
@@ -151,7 +148,20 @@ export function HELMLtoURL(sel_text: string): string | null {
         if (objArr === null) {
             objArr = HELML.decode(sel_text, extconfig.HELMLLayersList);
         }
-        const code_str = HELML.encode(objArr, true);
+        const code_str = HELML.encode(objArr, 2);
+        return code_str;
+    } catch(e: any) {
+        vscode.window.showErrorMessage(`Failed encode to HELML-url: ${e.message}`);
+        return null;
+    }
+}
+export function HELMLtoLINE(sel_text: string): string | null {
+    try {
+        let objArr = fromjson.decodeJSONtry2(sel_text);
+        if (objArr === null) {
+            objArr = HELML.decode(sel_text, extconfig.HELMLLayersList);
+        }
+        const code_str = HELML.encode(objArr, 1);
         return code_str;
     } catch(e: any) {
         vscode.window.showErrorMessage(`Failed encode to HELML-url: ${e.message}`);

@@ -1,13 +1,14 @@
 import * as vscode from 'vscode';
-import * as errlinesdecor from './errlinesdecor';
+//import * as errlinesdecor from './errlinesdecor';
 import * as blocklook from './blocklook';
 
-export let disposable = vscode.workspace.onDidChangeTextDocument((event) => {
+export let onChangeTextDisposable = vscode.workspace.onDidChangeTextDocument(event => {
     const editor = vscode.window.activeTextEditor;
     if (editor && event.contentChanges.length) {
-        // Active editor have changes
+
         const document = editor.document;
         if (document.languageId !== 'helml') {
+            blocklook.clearAllDecorations(editor);
             return;
         }
 
@@ -23,15 +24,17 @@ export let disposable = vscode.workspace.onDidChangeTextDocument((event) => {
             }
         }
         
-        const intersectedLines = errlinesdecor.errorLines.filter(x => changedLines.includes(x));
+        // This code is temporary removed
 
-        if (intersectedLines.length) {
-            tildasModify = true;
-            editor.setDecorations(errlinesdecor.errorDecoration, []);
-        }
-        if (tildasModify) {
-            errlinesdecor.highlightErrors(editor);
-        }
+        // const intersectedLines = errlinesdecor.errorLines.filter(x => changedLines.includes(x));
+
+        // if (intersectedLines.length) {
+        //     tildasModify = true;
+        //     editor.setDecorations(errlinesdecor.errorDecoration, []);
+        // }
+        // if (tildasModify) {
+        //     errlinesdecor.highlightErrors(editor);
+        // }
 
         if (changedLines.length > 1) {
             // do not continue for multiple-changes
@@ -94,3 +97,25 @@ export let disposable = vscode.workspace.onDidChangeTextDocument((event) => {
         });
     }
 });
+
+let langDisposable: vscode.Disposable | undefined;
+let langDispEditorURI: vscode.Uri | undefined;
+
+// Will subscribe on onDidChangeActiveTextEditor, then subscribe on languages.change
+export let onChangeEventDisposable = (context: vscode.ExtensionContext) => {
+    return vscode.window.onDidChangeActiveTextEditor(editor => {
+        const currURI = editor?.document.uri;
+        if (currURI) {
+            if (!langDisposable || currURI !== langDispEditorURI) {
+                langDispEditorURI = currURI;
+                langDisposable = vscode.languages.onDidChangeDiagnostics(event => {
+                    if (event.uris.includes(currURI)) {
+                        blocklook.clearAllDecorations(editor);
+                        langDisposable = undefined;
+                    }
+                });
+                context.subscriptions.push(langDisposable);
+            }
+        }
+    });
+}
