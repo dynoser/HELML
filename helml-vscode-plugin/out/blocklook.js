@@ -51,8 +51,9 @@ function reloadConfig() {
         backgroundColor: '#224;'
     });
     //    textDecoration: 'underline #000 waved;',
-    errorKeysDecoration = vscode.window.createTextEditorDecorationType({
-        backgroundColor: '#800'
+    errorKeysDecoration = vscode.window.createTextEditorDecorationType(extconfig.styles.errkeys || {
+        backgroundColor: '#800;',
+        textDecoration: 'underline wavy;'
     });
 }
 exports.reloadConfig = reloadConfig;
@@ -60,6 +61,7 @@ function clearAllDecorations(editor) {
     editor.setDecorations(upKeyListDecoration, []);
     editor.setDecorations(upKeyArrDecoration, []);
     editor.setDecorations(oneLevelKeysDecoration, []);
+    editor.setDecorations(subLevelKeysDecoration, []);
     editor.setDecorations(errorKeysDecoration, []);
 }
 exports.clearAllDecorations = clearAllDecorations;
@@ -86,18 +88,26 @@ function showOneLevelDecor(editor, is_list) {
     let range;
     let cLineHELML;
     const oneKeyLevelDecorations = [];
-    //const oneKeyErrDecorations = [];
+    const oneKeyErrDecorations = [];
+    let is_err = false;
     for (const arr of oneLevelLinesArray) {
         [cLineNumber, range, cLineHELML] = arr;
-        // const currKey = cLineHELML.key;
-        // if (is_list && (currKey.charAt(0) !== '-' && !(/^-?\d+(.\d+)?$/.test(currKey)))) {
-        //     oneKeyErrDecorations.push({ range});
-        // } else {
-        oneKeyLevelDecorations.push({ range });
-        // }
+        is_err = false;
+        if (is_list) {
+            const currKey = cLineHELML.key;
+            if (currKey.charAt(0) !== '-' && !(/^-?\d+(.\d+)?$/.test(currKey))) {
+                is_err = true;
+            }
+        }
+        if (is_err) {
+            oneKeyErrDecorations.push({ range });
+        }
+        else {
+            oneKeyLevelDecorations.push({ range });
+        }
     }
     editor.setDecorations(oneLevelKeysDecoration, oneKeyLevelDecorations);
-    // editor.setDecorations(errorKeysDecoration, oneKeyErrDecorations);
+    editor.setDecorations(errorKeysDecoration, oneKeyErrDecorations);
 }
 function showSubLevelDecor(editor) {
     let cLineNumber;
@@ -165,6 +175,7 @@ function edit_block_lookup(fromLineNumber) {
         let currWorkLevel = currLineHELML.level;
         let walkLineVS;
         let walkLineHELML;
+        let max_up_rows = 50;
         for (; walkLineNumber >= 0; walkLineNumber--) {
             walkLineVS = document.lineAt(walkLineNumber);
             walkLineHELML = new LineHELML_1.default(walkLineVS.text);
@@ -188,8 +199,11 @@ function edit_block_lookup(fromLineNumber) {
                 // if level up at one step
                 pushSubLevelLine(walkLineNumber, walkLineHELML, walkLineVS);
             }
+            if (max_up_rows-- < 0)
+                break;
         }
         // walk from current line to down
+        let max_down_rows = 50;
         for (let i = currLineNumber + 1; i < document.lineCount; i++) {
             walkLineVS = document.lineAt(i);
             walkLineHELML = new LineHELML_1.default(walkLineVS.text);
@@ -206,6 +220,8 @@ function edit_block_lookup(fromLineNumber) {
             else if (walkLineHELML.level === currWorkLevel + 1) { // if level up at one step
                 pushSubLevelLine(walkLineNumber, walkLineHELML, walkLineVS);
             }
+            if (max_down_rows-- < 0)
+                break;
         }
     }
     else {
@@ -219,7 +235,7 @@ function edit_block_lookup(fromLineNumber) {
         setUpKeyDecorator(editor, upKeyRange, upKeyLineNumber, upKeyLineHELML === null || upKeyLineHELML === void 0 ? void 0 : upKeyLineHELML.is_list);
     }
     if (isHELML) {
-        showOneLevelDecor(editor, currLineHELML.is_list);
+        showOneLevelDecor(editor, upKeyLineHELML === null || upKeyLineHELML === void 0 ? void 0 : upKeyLineHELML.is_list);
         showSubLevelDecor(editor);
     }
     return {

@@ -2,7 +2,7 @@
   "name": "helml",
   "displayName": "helml",
   "description": "Plugin to encode/decode HELML data and syntaxes highliting",
-  "version": "0.0.24",
+  "version": "0.0.26",
   "publisher": "dynoser",
   "license": "MIT",
   "repository": {
@@ -114,25 +114,30 @@
           "default": "0",
           "description": "HELML decoder layers list (comma separated)"
         },
-        "helml.style.upkey": {
-          "type": "string",
-          "default": "border: 1px dotted #0D0; padding: 4px;",
-          "description": "HELML upkey decorator style"
-        },
-        "helml.style.upkeylist": {
-          "type": "string",
-          "default": "border: 1px dotted #880; padding: 4px;",
-          "description": "HELML upkey-list decorator style (for num-key arrays)"
-        },
         "helml.style.onelevelkeys": {
           "type": "string",
-          "default": "backgroundColor: #040;",
+          "default": "backgroundColor: #242;~borderRadius: 15%;",
           "description": "HELML decorator style for one-level-keys"
         },
         "helml.style.subkeys": {
           "type": "string",
-          "default": "backgroundColor: #008;",
+          "default": "backgroundColor: #228;~borderRadius: 15%;",
           "description": "HELML decorator style for sub-level-keys"
+        },
+        "helml.style.upkey": {
+          "type": "string",
+          "default": "border: 1px dotted #0D0;~padding: 4px;",
+          "description": "HELML upkey decorator style"
+        },
+        "helml.style.upkeylist": {
+          "type": "string",
+          "default": "border: 1px dotted #880;~padding: 4px;",
+          "description": "HELML upkey-list decorator style (for num-key arrays)"
+        },
+        "helml.style.errkeys": {
+          "type": "string",
+          "default": "backgroundColor: #800;~textDecoration: underline wavy;",
+          "description": "HELML upkey-list decorator style (for num-key arrays)"
         }
       }
     }
