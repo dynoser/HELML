@@ -59,7 +59,7 @@ func (h *HELML) Decode(src_rows string, get_layers ...interface{}) interface{} {
 
 	str_arr := strings.Split(src_rows, exploder_ch)
 
-	var result interface{}
+	result := make(map[string]interface{})
 	stack := []string{}
 
 	min_level := -1
@@ -80,14 +80,16 @@ func (h *HELML) Decode(src_rows string, get_layers ...interface{}) interface{} {
 			line = line[level:]
 		}
 
-		firstDiv := strings.Index(line, lvl_ch)
+		haveDot := strings.Index(line, lvl_ch)
 		key := ""
 		value := ""
-		if firstDiv == -1 {
+		if haveDot == -1 {
 			key = line
+			haveDot = 0
 		} else {
-			key = line[:firstDiv]
-			value = line[firstDiv+1:]
+			key = line[:haveDot]
+			value = line[haveDot+1:]
+			haveDot = 1
 		}
 
 		if min_level < 0 || min_level > level {
@@ -102,13 +104,34 @@ func (h *HELML) Decode(src_rows string, get_layers ...interface{}) interface{} {
 
 		var parent interface{} = result
 		for _, parentKey := range stack {
-			parent = parent.(map[string]interface{})[parentKey]
+			switch parentVal := parent.(type) {
+			case map[string]interface{}:
+				if childVal, ok := parentVal[parentKey]; ok {
+					parent = childVal
+				} else {
+					break
+				}
+			case map[int]interface{}:
+				if parentKeyInt, err := strconv.Atoi(parentKey); err == nil {
+					if childVal, ok := parentVal[parentKeyInt]; ok {
+						parent = childVal
+					} else {
+						break
+					}
+				} else {
+					break
+				}
+			default:
+				break
+			}
 		}
 
 		if key[0] == '-' {
 			if key == "--" || key == "---" {
 				switch p := parent.(type) {
 				case map[string]interface{}:
+					key = strconv.Itoa(len(p))
+				case map[int]interface{}:
 					key = strconv.Itoa(len(p))
 				default:
 					key = "0"
@@ -138,22 +161,37 @@ func (h *HELML) Decode(src_rows string, get_layers ...interface{}) interface{} {
 			}
 		}
 
+		var setValue interface{}
+		needSet := true
 		if value == "" {
-			if parent.(map[string]interface{})[key] == nil {
-				parent.(map[string]interface{})[key] = map[string]interface{}{}
-				stack = append(stack, key)
-				layer_curr = layer_init
+			if haveDot == 1 {
+				setValue = map[int]interface{}{}
 			} else {
-				parent.(map[string]interface{})[key] = []interface{}{}
+				setValue = map[string]interface{}{}
 			}
-		} else if _, ok := layers_list[layer_curr]; ok {
-			parent.(map[string]interface{})[key] = valueDecoFun(value, spc_ch)
+			stack = append(stack, key)
+			layer_curr = layer_init
+		} else {
+			if _, ok := layers_list[layer_curr]; ok {
+				setValue = valueDecoFun(value, spc_ch)
+			} else {
+				needSet = false
+			}
+		}
+		if needSet {
+			if parentMapString, ok := parent.(map[string]interface{}); ok {
+				parentMapString[key] = setValue
+			} else if parentMapInt, ok := parent.(map[int]interface{}); ok {
+				if keyInt, err := strconv.Atoi(key); err == nil {
+					parentMapInt[keyInt] = setValue
+				}
+			}
 		}
 	}
 
-	// if len(all_layers) > 1 {
-	// 	result["_layers"] = keys(all_layers)
-	// }
+	if len(all_layers) > 1 {
+		result["_layers"] = keys(all_layers)
+	}
 
 	return result
 }
