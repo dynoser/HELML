@@ -10,7 +10,7 @@ import (
 type HELML struct {
 	CUSTOM_FORMAT_DECODER func(value string, spc_ch string) interface{}
 	CUSTOM_VALUE_DECODER  func(value string, spc_ch string) interface{}
-	ADD_LAYERS_KEY bool `default:false`
+	ADD_LAYERS_KEY        bool `default:"true"`
 }
 
 var SPEC_TYPE_VALUES = map[string]interface{}{
@@ -33,7 +33,7 @@ func (h *HELML) Decode(src_rows string, get_layers *[]string) interface{} {
 	layer_curr := layer_init
 	all_layers := map[string]struct{}{"0": {}}
 
-	if get_layers == nil {
+	if get_layers == nil || len(*get_layers) == 0 {
 		get_layers = &[]string{"0"}
 	}
 
@@ -195,7 +195,7 @@ func (h *HELML) Decode(src_rows string, get_layers *[]string) interface{} {
 		}
 	}
 
-	if h.ADD_LAYERS_KEY && len(all_layers) > 1 {
+	if h.ADD_LAYERS_KEY == true && len(all_layers) > 1 {
 		result["_layers"] = keys(all_layers)
 	}
 
