@@ -10,6 +10,7 @@ import (
 type HELML struct {
 	CUSTOM_FORMAT_DECODER func(value string, spc_ch string) interface{}
 	CUSTOM_VALUE_DECODER  func(value string, spc_ch string) interface{}
+	ADD_LAYERS_KEY bool `default:false`
 }
 
 var SPEC_TYPE_VALUES = map[string]interface{}{
@@ -22,7 +23,7 @@ var SPEC_TYPE_VALUES = map[string]interface{}{
 	"NIF": math.Inf(-1),
 }
 
-func (h *HELML) Decode(src_rows string, get_layers ...interface{}) interface{} {
+func (h *HELML) Decode(src_rows string, get_layers *[]string) interface{} {
 	valueDecoFun := h.CUSTOM_VALUE_DECODER
 	if valueDecoFun == nil {
 		valueDecoFun = h.ValueDecoder
@@ -32,14 +33,14 @@ func (h *HELML) Decode(src_rows string, get_layers ...interface{}) interface{} {
 	layer_curr := layer_init
 	all_layers := map[string]struct{}{"0": {}}
 
-	layers_list := map[string]struct{}{layer_init: {}}
-	for _, item := range get_layers {
-		switch v := item.(type) {
-		case int:
-			layers_list[strconv.Itoa(v)] = struct{}{}
-		case string:
-			layers_list[v] = struct{}{}
-		}
+	if get_layers == nil {
+		get_layers = &[]string{"0"}
+	}
+
+	layers := *get_layers
+	layers_list := map[string]struct{}{}
+	for _, layer := range layers {
+		layers_list[layer] = struct{}{}
 	}
 
 	lvl_ch := ":"
@@ -189,7 +190,7 @@ func (h *HELML) Decode(src_rows string, get_layers ...interface{}) interface{} {
 		}
 	}
 
-	if len(all_layers) > 1 {
+	if h.ADD_LAYERS_KEY && len(all_layers) > 1 {
 		result["_layers"] = keys(all_layers)
 	}
 
