@@ -1,4 +1,4 @@
-package gohelml
+package helmldecoder
 
 import (
 	"encoding/base64"
