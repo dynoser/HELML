@@ -1,4 +1,4 @@
-module github.com/dynoser/HELML/tree/master/gohelmltests
+module github.com/dynoser/HELML/Golang
 
 go 1.20
 
