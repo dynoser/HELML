@@ -2,14 +2,14 @@ package gohelml
 
 import (
 	"encoding/base64"
+	"math"
 	"strconv"
 	"strings"
-	"math"
 )
 
 type HELML struct {
 	CUSTOM_FORMAT_DECODER func(value string, spc_ch string) interface{}
-	CUSTOM_VALUE_DECODER   func(value string, spc_ch string) interface{}
+	CUSTOM_VALUE_DECODER  func(value string, spc_ch string) interface{}
 }
 
 var SPEC_TYPE_VALUES = map[string]interface{}{
@@ -22,7 +22,7 @@ var SPEC_TYPE_VALUES = map[string]interface{}{
 	"NIF": math.Inf(-1),
 }
 
-func (h *HELML) Decode(src_rows string, get_layers ...interface{}) map[string]interface{} {
+func (h *HELML) Decode(src_rows string, get_layers ...interface{}) interface{} {
 	valueDecoFun := h.CUSTOM_VALUE_DECODER
 	if valueDecoFun == nil {
 		valueDecoFun = h.ValueDecoder
@@ -59,7 +59,7 @@ func (h *HELML) Decode(src_rows string, get_layers ...interface{}) map[string]in
 
 	str_arr := strings.Split(src_rows, exploder_ch)
 
-	result := map[string]interface{}{}
+	var result interface{}
 	stack := []string{}
 
 	min_level := -1
@@ -100,9 +100,9 @@ func (h *HELML) Decode(src_rows string, get_layers ...interface{}) map[string]in
 			layer_curr = layer_init
 		}
 
-		parent := result
+		var parent interface{} = result
 		for _, parentKey := range stack {
-			parent = parent[parentKey].(map[string]interface{})
+			parent = parent.(map[string]interface{})[parentKey]
 		}
 
 		if key[0] == '-' {
@@ -121,7 +121,7 @@ func (h *HELML) Decode(src_rows string, get_layers ...interface{}) map[string]in
 					}
 					layer_curr = layer_init
 				} else if key == "-+" {
-				
+
 					if value == "" {
 						layer_curr = layer_init
 					} else {
@@ -139,21 +139,21 @@ func (h *HELML) Decode(src_rows string, get_layers ...interface{}) map[string]in
 		}
 
 		if value == "" {
-			if parent[key] == nil {
-				parent[key] = map[string]interface{}{}
+			if parent.(map[string]interface{})[key] == nil {
+				parent.(map[string]interface{})[key] = map[string]interface{}{}
 				stack = append(stack, key)
 				layer_curr = layer_init
 			} else {
-				parent[key] = []interface{}{}
+				parent.(map[string]interface{})[key] = []interface{}{}
 			}
 		} else if _, ok := layers_list[layer_curr]; ok {
-			parent[key] = valueDecoFun(value, spc_ch)
+			parent.(map[string]interface{})[key] = valueDecoFun(value, spc_ch)
 		}
 	}
 
-	if len(all_layers) > 1 {
-		result["_layers"] = keys(all_layers)
-	}
+	// if len(all_layers) > 1 {
+	// 	result["_layers"] = keys(all_layers)
+	// }
 
 	return result
 }
@@ -168,8 +168,12 @@ func (h *HELML) ValueDecoder(encodedValue string, spc_ch string) interface{} {
 		if val, ok := SPEC_TYPE_VALUES[slicedValue]; ok {
 			return val
 		}
-		if _, err := strconv.ParseFloat(slicedValue, 64); err == nil {
-			return strconv.ParseFloat(slicedValue, 64)
+		if floatValue, err := strconv.ParseFloat(slicedValue, 64); err == nil {
+			intValue := int(floatValue)
+			if floatValue == float64(intValue) {
+				return intValue
+			}
+			return floatValue
 		}
 		if h.CUSTOM_FORMAT_DECODER != nil {
 			return h.CUSTOM_FORMAT_DECODER(encodedValue, spc_ch)
@@ -209,13 +213,13 @@ func (h *HELML) base64Udecode(str string) (string, error) {
 
 func (h *HELML) stripcslashes(str string) string {
 	controlCharsMap := map[string]string{
-		"\\n": "\n",
-		"\\t": "\t",
-		"\\r": "\r",
-		"\\b": "\b",
-		"\\f": "\f",
-		"\\v": "\v",
-		"\\0": "\x00",
+		"\\n":  "\n",
+		"\\t":  "\t",
+		"\\r":  "\r",
+		"\\b":  "\b",
+		"\\f":  "\f",
+		"\\v":  "\v",
+		"\\0":  "\x00",
 		"\\\\": "\\",
 	}
 	for k, v := range controlCharsMap {
@@ -229,6 +233,5 @@ func keys(m map[string]struct{}) []string {
 	for k := range m {
 		keys = append(keys, k)
 	}
-	sort.Strings(keys)
 	return keys
 }
