@@ -147,7 +147,12 @@ func (h *HELML) Decode(src_rows string, get_layers *[]string) interface{} {
 				} else if key == "-+" {
 
 					if value == "" {
-						layer_curr = layer_init
+						num, err := strconv.Atoi(layer_curr)
+						if err == nil {
+							layer_curr = strconv.Itoa(num + 1)
+						} else {
+							layer_curr = layer_init
+						}
 					} else {
 						layer_curr = value
 					}
