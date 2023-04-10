@@ -5,7 +5,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/dynoser/HELML/tree/master/gohelml"
+	"github.com/dynoser/HELML/tree/master/gohelml/helmldecoder"
 )
 
 func TestDecoder(t *testing.T) {
