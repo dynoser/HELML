@@ -271,11 +271,11 @@ the specified number of "level colons".
 # Two kinds of nested arrays
 
 Nested arrays are created by specifying a "key" and an empty value, and there are two options:
-   1) key without "separating colon" (in this case, an empty value is implied)
-   2) a key and a "separating colon" after which there is no value.
-
-   - When there is no "separating colon", an array is created with arbitrary keys `{...}`
-   - When a "separating colon" ends a line, an array is created with numeric keys `[...]`
+   1) a key and a "separating colon" after which there is no value.
+   2) key without "separating colon" (in this case, an empty value is implied)
+  
+  - When a "separating colon" ends a line, an array is created with arbitrary keys `{...}`
+  - When there is no "separating colon", an array is created with numeric keys `[...]`
 
 It is convenient for compatibility to distinguish between these two kinds of arrays, since in many programming languages
 work with "dictionaries" and "lists" is implemented differently.
@@ -293,25 +293,25 @@ For example, let's convert this JSON to HELML:
 ```
 In HELML, this will have a colon after "List":
 ```python
-# Note the : after List, it indicates that this will be a list
-List:
+# Note the absence of : after List, it indicates that it will be a list with numeric keys
+List
  :0: A
  :1: B
  :2: C
 ```
 
-If you remove this colon, it will correspond to an array in curly brackets:
+If you add a colon after "List", then the array will be decoded like this:
 ```json
 { "List": {"0": "A", "1": "B", "2": "C"} }
 ```
 
-So in HELML, adding a colon after a key at the end of a line allows
-indicate that a nested array of the "list" type is being created, that is, the keys in it must
-be strictly numeric and consecutive from 0 and up.
+Thus, in HELML, colons after a key at the end of a line allow you to create arrays with arbitrary keys,
+and this method is recommended in most cases. The second option, when there is no colon after the key,
+creates an array with the constraint that the keys in it must be numeric.
 
 For HELML lists, a special key "next number" is convenient, it allows you to write the above example like this:
 ```sh
-List:
+List
   :--: A
   :--: B
   :--: C
@@ -352,26 +352,28 @@ Example:
 --
  :--: X
  :--: Y
---
- :A:
+--:
+ :A
   ::--:  1
   ::--:  2
  :B:
   ::--: 3
   ::--: 4
- :-:
+ :-
   ::--: ABC
   ::--: DEF
 ```
 Convert it from HELML to JSON:
 ```json
 {
-	"0": "X",
-	"1": "Y",
-	"2": {
+	"0": ["X", "Y"],
+	"1": {
 		"A": [1, 2],
-		"B": ["3", "4"],
-		"": [ "ABC", "DEF" ]
+		"B": {
+			"0": "3",
+			"1": "4"
+		},
+		"": {"0": "ABC", "1": "DEF" }
 	}
 }
 ```

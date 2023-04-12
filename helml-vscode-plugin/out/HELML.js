@@ -197,7 +197,7 @@ class HELML {
             }
             // If the value is null, start a new array and add it to the parent array
             if (value === null || value === '') {
-                parent[key] = value === '' ? {} : [];
+                parent[key] = value === null ? [] : {};
                 stack.push(key);
                 layer_curr = layer_init;
             }
