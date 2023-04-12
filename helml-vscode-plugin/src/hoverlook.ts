@@ -73,9 +73,9 @@ export function exploreLine(src_str: string, word: string): string | null {
     // Creaters
     if (line.is_creat) {
         if (value === null) {
-            return `Create Array: ${key_str}`;
+            return `Create LIST: ${key_str}`;
         }
-        return `Create LIST: ${key_str}`;
+        return `Create Array: ${key_str}`;
     }
 
     // Now value is not empty string. Key:value variants analyzing

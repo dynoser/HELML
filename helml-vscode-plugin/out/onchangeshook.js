@@ -28,6 +28,7 @@ const vscode = __importStar(require("vscode"));
 //import * as errlinesdecor from './errlinesdecor';
 const blocklook = __importStar(require("./blocklook"));
 exports.onChangeTextDisposable = vscode.workspace.onDidChangeTextDocument(event => {
+    var _a;
     const editor = vscode.window.activeTextEditor;
     if (editor && event.contentChanges.length) {
         const document = editor.document;
@@ -92,8 +93,8 @@ exports.onChangeTextDisposable = vscode.workspace.onDidChangeTextDocument(event 
             currWorkLevel++;
         }
         let insertionStr = ' '.repeat(currWorkSpCnt) + ':'.repeat(currWorkLevel);
-        if (currWorkKey === '--') {
-            insertionStr += currWorkKey + ':';
+        if (currWorkKey === '--' || ((_a = currBlockObj.upKeyLineHELML) === null || _a === void 0 ? void 0 : _a.is_list)) {
+            insertionStr += '--:';
         }
         if (!insertionStr.length) {
             return;

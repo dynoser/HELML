@@ -2,7 +2,7 @@
   "name": "helml",
   "displayName": "helml",
   "description": "Plugin to encode/decode HELML data and syntaxes highliting",
-  "version": "0.0.29",
+  "version": "0.0.30",
   "publisher": "dynoser",
   "license": "MIT",
   "repository": {

@@ -16,7 +16,8 @@ class LineHELML {
         let strlen = line.length;
         // count spaces in the end of line
         while (strlen) {
-            if (line[strlen - 1] !== ' ')
+            const ch = line[strlen - 1];
+            if (ch !== ' ' && ch !== "\t")
                 break;
             strlen--;
             this.spc_right_cnt++;
@@ -32,7 +33,8 @@ class LineHELML {
         let spc_cnt = 0;
         let level = 0;
         for (let i = 0; i < strlen; i++) {
-            if (line[i] === ' ') {
+            const ch = line[i];
+            if (ch === ' ' || ch === "\t") {
                 spc_cnt++;
             }
             else {
@@ -49,7 +51,11 @@ class LineHELML {
         }
         this.spc_left_cnt = spc_cnt;
         this.level = level;
-        if (line.charAt(spc_cnt) === '#') { // Ignore comment lines starting with '#'
+        const fc = line.charAt(spc_cnt);
+        if (fc === '"' || fc === '[' || fc === '{' || fc === ']' || fc === '}' || fc === ',') {
+            return; //is_ignore = true, for skip JSON prefixes
+        }
+        if (fc === '#') { // Ignore comment lines starting with '#'
             this.key = '#';
             return; // is_ignore = true
         }
@@ -59,12 +65,17 @@ class LineHELML {
         const colonIndex = line.indexOf(':', spc_cnt + level + 1);
         const haveColonDiv = colonIndex > (spc_cnt + level);
         const onlyKeyNoDiv = (colonIndex < 0 && (spc_cnt + level) < strlen);
-        this.is_list = haveColonDiv && (colonIndex === strlen - 1);
+        const is_arr = haveColonDiv && (colonIndex === strlen - 1);
         if (colonIndex > 0) {
-            this.key = line.substring(spc_cnt + level, colonIndex);
+            this.key = line.substring(spc_cnt + level, colonIndex).trim();
+            if (!this.key.length) {
+                this.is_ignore = true;
+                return;
+            }
             this.value = line.substring(colonIndex + 1);
         }
         else if (onlyKeyNoDiv) {
+            this.is_list = true;
             this.key = line.substring(spc_cnt + level);
         }
         if (this.key.startsWith('-+')) {
@@ -72,7 +83,7 @@ class LineHELML {
                 this.is_layer = true;
             }
         }
-        else if (this.is_list || onlyKeyNoDiv) {
+        else if (is_arr || this.is_list) {
             this.is_creat = true;
         }
     }

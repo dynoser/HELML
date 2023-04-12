@@ -72,7 +72,7 @@ class HELML {
                 if (HELML.ENABLE_KEY_UPLINES && spc_ch === ' ') {
                     results_arr.push('');
                 }
-                results_arr.push(ident + (is_arr ? key + lvl_ch : key));
+                results_arr.push(ident + (is_arr ? key : key + lvl_ch));
                 value = HELML.iterablize(value);
                 HELML._encode(value, results_arr, level + 1, lvl_ch, spc_ch, is_arr);
                 if (HELML.ENABLE_HASHSYMBOLS && spc_ch === ' ') {
@@ -88,18 +88,12 @@ class HELML {
         }
     }
     static decode(src_rows, get_layers = [0]) {
-        // Set value decoder function as default valueDecoder or custom user function
-        const valueDecoFun = HELML.CUSTOM_VALUE_DECODER === null ? HELML.valueDecoder : HELML.CUSTOM_VALUE_DECODER;
-        // If the input is an array, use it. Otherwise, split the input string into an array.
-        let layer_init = '0';
-        let layer_curr = layer_init;
-        let all_layers = new Set(['0']);
         // Prepare layers_set from get_layers
         // 1. Modify get_layers if needed: convert single T to array [0, T]
         if (typeof get_layers === 'number' || typeof get_layers === 'string') {
             get_layers = [get_layers];
         }
-        let layers_list = new Set([layer_init]);
+        let layers_list = new Set(['0']);
         // convert all elements in layers_list to String type
         get_layers.forEach((item, index) => {
             if (typeof item === "number") {
@@ -119,6 +113,14 @@ class HELML {
             }
         }
         let str_arr = src_rows.split(exploder_ch);
+        return HELML._decode(str_arr, layers_list, lvl_ch, spc_ch);
+    }
+    static _decode(str_arr, layers_list, lvl_ch, spc_ch) {
+        // Set value decoder function as default valueDecoder or custom user function
+        const valueDecoFun = HELML.CUSTOM_VALUE_DECODER === null ? HELML.valueDecoder : HELML.CUSTOM_VALUE_DECODER;
+        let layer_init = "0";
+        let layer_curr = layer_init;
+        let all_layers = new Set(['0']);
         // Initialize result array and stack for keeping track of current array nesting
         let result = {};
         let stack = [];
@@ -195,7 +197,7 @@ class HELML {
             }
             // If the value is null, start a new array and add it to the parent array
             if (value === null || value === '') {
-                parent[key] = value === '' ? [] : {};
+                parent[key] = value === '' ? {} : [];
                 stack.push(key);
                 layer_curr = layer_init;
             }

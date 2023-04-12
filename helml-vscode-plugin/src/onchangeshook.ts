@@ -80,8 +80,8 @@ export let onChangeTextDisposable = vscode.workspace.onDidChangeTextDocument(eve
         }
 
         let insertionStr = ' '.repeat(currWorkSpCnt) + ':'.repeat(currWorkLevel);
-        if (currWorkKey === '--') {
-            insertionStr += currWorkKey + ':';
+        if (currWorkKey === '--' || currBlockObj.upKeyLineHELML?.is_list) {
+            insertionStr += '--:';
         }
         if (!insertionStr.length) {
             return;

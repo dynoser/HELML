@@ -98,9 +98,9 @@ function exploreLine(src_str, word) {
     // Creaters
     if (line.is_creat) {
         if (value === null) {
-            return `Create Array: ${key_str}`;
+            return `Create LIST: ${key_str}`;
         }
-        return `Create LIST: ${key_str}`;
+        return `Create Array: ${key_str}`;
     }
     // Now value is not empty string. Key:value variants analyzing
     fc = value.charAt(0);
