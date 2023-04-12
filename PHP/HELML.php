@@ -8,7 +8,7 @@ namespace dynoser\HELML;
  */
 ###^ encoder decoder
 ###
-### WARNING: This ###-markup is the SectMan tags (section manager)
+### WARNING: This ###-markup is the SectMan tags (SectMan is a Sections Manager)
 ###   See: https://github.com/dynoser/sectman/
 ###
 ### SectMan:
