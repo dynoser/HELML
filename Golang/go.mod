@@ -1,9 +1,9 @@
-module github.com/dynoser/HELML/Golang
+module github.com/dynoser/HELML/Golang/gohelml_test
 
 go 1.20
 
 require (
-	github.com/dynoser/gohelml v0.0.0-20230410134945-264a0b7d51c7
+	github.com/dynoser/gohelml v0.0.0-20230410170301-e35bb437d3d0
 	github.com/stretchr/testify v1.8.2
 )
 

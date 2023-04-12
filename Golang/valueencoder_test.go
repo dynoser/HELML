@@ -7,8 +7,8 @@ import (
 	"github.com/dynoser/gohelml"
 )
 
-func TestValueDecoder(t *testing.T) {
-	h := gohelml.HELML{}
+func TestValueEncoder(t *testing.T) {
+	h := &gohelml.HELML{}
 
 	testCases := []struct {
 		name    string
@@ -17,17 +17,23 @@ func TestValueDecoder(t *testing.T) {
 		want    interface{}
 	}{
 
-		// {
-		// 	name:    "Undefined",
-		// 	srcRows: "  U",
-		// 	spcCh:   " ",
-		// 	want:    (*interface{})(nil),
-		// },
+		{
+			name:    "Undefined",
+			srcRows: "  U",
+			spcCh:   " ",
+			want:    (*interface{})(nil),
+		},
 		{
 			name:    "NULL",
 			srcRows: "  N",
 			spcCh:   " ",
 			want:    (nil),
+		},
+		{
+			name:    "Base64url decode",
+			srcRows: "-dGUKc3Q=",
+			spcCh:   " ",
+			want:    "te\nst",
 		},
 		{
 			name:    "True value",
@@ -71,36 +77,42 @@ func TestValueDecoder(t *testing.T) {
 			spcCh:   " ",
 			want:    "text",
 		},
-		{
-			name:    "single quoted value",
-			srcRows: "'text1 text2 text3'",
-			spcCh:   " ",
-			want:    "text1 text2 text3",
-		},
-		{
-			name:    "double quoted newline inside value",
-			srcRows: "\"text3\\n text2 text1\"",
-			spcCh:   " ",
-			want:    "text3\n text2 text1",
-		},
-		{
-			name:    "Base64url decode==",
-			srcRows: "-dGVzdA==",
-			spcCh:   " ",
-			want:    "test",
-		},
-		{
-			name:    "Empty line in base64url",
-			srcRows: "-",
-			spcCh:   " ",
-			want:    "",
-		},
+		// {
+		// 	name:    "single quoted value",
+		// 	srcRows: "'text1 text2 text3'",
+		// 	spcCh:   " ",
+		// 	want:    "text1 text2 text3",
+		// },
+		// {
+		// 	name:    "double quoted newline inside value",
+		// 	srcRows: "\"text3\\n text2 text1\"",
+		// 	spcCh:   " ",
+		// 	want:    "text3\n text2 text1",
+		// },
+		// {
+		// 	name:    "Base64url decode",
+		// 	srcRows: "-dGVzdA",
+		// 	spcCh:   " ",
+		// 	want:    "test",
+		// },
+		// {
+		// 	name:    "Base64url decode==",
+		// 	srcRows: "-dGVzdA==",
+		// 	spcCh:   " ",
+		// 	want:    "test",
+		// },
+		// {
+		// 	name:    "Empty line in base64url",
+		// 	srcRows: "-",
+		// 	spcCh:   " ",
+		// 	want:    "",
+		// },
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			got := h.ValueDecoder(tc.srcRows, tc.spcCh)
-			if !reflect.DeepEqual(got, tc.want) {
+			got, _ := h.ValueEncoder(tc.want, tc.spcCh)
+			if !reflect.DeepEqual(got, tc.srcRows) {
 				t.Errorf("ValueDecoder(%q, %q) = %v, want %v", tc.srcRows, tc.spcCh, got, tc.want)
 			}
 		})
