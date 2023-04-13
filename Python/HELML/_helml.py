@@ -99,20 +99,20 @@ class HELML:
             if HELML.ENABLE_SPC_IDENT and spc_ch == ' ':
                 ident = spc_ch * (level * HELML.ENABLE_SPC_IDENT) + ident
 
-            is_arr = isinstance(value, (list, tuple, set))
+            is_numkeys = isinstance(value, (list, tuple, set))
 
-            if is_arr or isinstance(value, dict):
+            if is_numkeys or isinstance(value, dict):
                 # Add empty line before create-key
                 if HELML.ENABLE_KEY_UPLINES and spc_ch == ' ':
                     results_arr.append('')
-                
+
                 # add ":" after key for lists
-                if is_arr:
+                if not is_numkeys:
                     key += lvl_ch
 
                 results_arr.append(ident + key)
 
-                HELML._encode(value, results_arr, level + 1, lvl_ch, spc_ch, is_arr)
+                HELML._encode(value, results_arr, level + 1, lvl_ch, spc_ch, is_numkeys)
 
                 if HELML.ENABLE_KEY_UPLINES and spc_ch == ' ':
                     results_arr.append(spc_ch * level + '#')
@@ -129,19 +129,13 @@ class HELML:
         get_layers: Union[int, str, Set[Union[str, int]], List[Union[str, int]]] = [0]
     ) -> Dict:
 
-        # select value decoder function custom or internal default
-        value_deco_fun = HELML.CUSTOM_VALUE_DECODER if HELML.CUSTOM_VALUE_DECODER is not None else HELML.valueDecoder
-
         lvl_ch: str = ":"
         spc_ch: str = " "
-        layer_init: str = '0'
-        layer_curr:str = layer_init
-        all_layers = set([layer_init])
 
         # Prepare layers_set from get_layers
         # 1. Modify get_layers if needed: convert single T to array [0, T]
         if isinstance(get_layers, (int, str)):
-            get_layers = [layer_init, get_layers]
+            get_layers = ['0', get_layers]
         # 2. Create layers_set and set all values from get_layers (str)
         layers_set = set()
         for i in get_layers:
@@ -159,6 +153,22 @@ class HELML:
                 break
 
         str_arr = src_rows.split(exploder_ch)
+        return HELML._decode(str_arr, layers_set, lvl_ch, spc_ch)
+
+    def _decode(
+        str_arr: list,
+        layers_set: set,
+        lvl_ch: str,
+        spc_ch: str
+    ) -> Dict:
+        
+        # layer values prepare
+        layer_init: str = '0'
+        layer_curr:str = layer_init
+        all_layers = set([layer_init])
+
+        # select value decoder function custom or internal default
+        value_deco_fun = HELML.CUSTOM_VALUE_DECODER if HELML.CUSTOM_VALUE_DECODER is not None else HELML.valueDecoder
 
         # Initialize result array and stack for keeping track of current array nesting
         result = {}
@@ -240,7 +250,7 @@ class HELML:
                 layer_curr = layer_init
                 parent[key] = {}
                 stack.append(key)
-                if value == '':
+                if value is None:
                     tolist.append(stack.copy())
             elif layer_curr in layers_set:
                 # Decode the value by selected value-decoder-function
