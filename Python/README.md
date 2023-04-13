@@ -40,7 +40,7 @@ encoded_data:
 ```console
 key1: value1
 
-key2:
+key2
  :--:  1
  :--:  2
  :--:  3
