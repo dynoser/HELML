@@ -191,6 +191,8 @@ export default class HELML {
             // If the line has colons at the beginning, remove them from the line
             if (level) {
                 line = line.substring(level);
+            } else if (line.startsWith('//')) { // skip line comment
+                continue;
             }
     
             // Split the line into a key and a value (or null if the line starts a new array)

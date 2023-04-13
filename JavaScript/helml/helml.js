@@ -140,6 +140,9 @@ class HELML {
             if (level) {
                 line = line.substring(level);
             }
+            else if (line.startsWith('//')) { // skip line comment
+                continue;
+            }
             // Split the line into a key and a value (or null if the line starts a new array)
             const firstDiv = line.indexOf(lvl_ch);
             let key = firstDiv === -1 ? line : line.substring(0, firstDiv);

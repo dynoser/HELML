@@ -56,7 +56,7 @@ export default class LineHELML {
         this.level = level;
 
         const fc = line.charAt(spc_cnt);
-        if (fc === '"' || fc === '[' || fc === '{' || fc === ']' || fc ==='}' || fc === ',') {
+        if (fc === '"' || fc === '[' || fc === '{' || fc === ']' || fc ==='}' || fc === ',' || fc === '/') {
             return; //is_ignore = true, for skip JSON prefixes
         }
         if (fc === '#') { // Ignore comment lines starting with '#'

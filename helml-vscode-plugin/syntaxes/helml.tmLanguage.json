@@ -2,7 +2,13 @@
   "scopeName": "source.helml",
   "patterns": [
     {
+      "include": "#sectman"
+    },
+    {
       "include": "#comment"
+    },
+    {
+      "include": "#comment2"
     },
 
     {
@@ -43,9 +49,39 @@
   ],
   "repository": {
 
+    "sectman": {
+      "patterns": [
+        {
+          "match": "^\\s*(###|///)\\^(.*)$",
+          "captures": {
+            "1": {"name": "comment.line.number-sign.helml"},
+            "2": {"name": "meta.object-literal.key"}
+          }
+        },
+        {
+          "match": "^\\s*(###|///)\\!(.*)$",
+          "captures": {
+            "1": {"name": "comment.line.number-sign.helml"},
+            "2": {"name": "constant.numeric.helml"}
+          }
+        },
+        {
+          "match": "^\\s*(###|///)(.*)$",
+          "captures": {
+            "1": {"name": "comment.line.number-sign.helml"},
+            "2": {"name": "string.unquoted.helml"}
+          }
+        }
+      ]
+    },
+
     "comment": {
       "name": "comment.line.number-sign.helml",
       "match": "^\\s*#.*$"
+    },
+    "comment2": {
+      "name": "comment.line.number-sign.helml",
+      "match": "^\\s*//.*$"
     },
 
     "key_layer_default": {

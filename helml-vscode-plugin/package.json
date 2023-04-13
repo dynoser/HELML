@@ -2,7 +2,7 @@
   "name": "helml",
   "displayName": "helml",
   "description": "Plugin to encode/decode HELML data and syntaxes highliting",
-  "version": "0.0.30",
+  "version": "0.0.31",
   "publisher": "dynoser",
   "license": "MIT",
   "repository": {
@@ -38,6 +38,7 @@
       {
         "language": "helml",
         "scopeName": "source.helml",
+        "configuration": "./syntaxes/language-configuration.json",
         "path": "./syntaxes/helml.tmLanguage.json"
       }
     ],
