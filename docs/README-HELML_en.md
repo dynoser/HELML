@@ -7,15 +7,12 @@
 HELML (HEader-Like Markup Language) is a marking language similar to the HTTP headlines format.
 
 For example, you can decode this text from HELML:
-
 ```sh
 Host: github.com
 Accept: image/avif,image/webp
 Accept-Encoding: gzip, deflate, br
 ```
-
 The result is an array `[key] => 'Value'`:
-
 ```json
 {
 	"Host": "github.com",
@@ -23,14 +20,13 @@ The result is an array `[key] => 'Value'`:
 	"Accept-Encoding": "gzip, deflate, br"
 }
 ```
-
 Helml allows you to create nested arrays, controlling the signs of "`: `", for example:
+
 ```sh
 Hosts:
  :--: github.com
  :--: www.github.com
 ```
-
 In json format it will be like this:
 ```json
 {
@@ -40,7 +36,6 @@ In json format it will be like this:
 	]
 }
 ```
-
 # For what?
 
 I. When JSON does not cope
@@ -93,13 +88,13 @@ Keys and values can be presented in the Base64 encoding.
 The "-" sign at the beginning of a key or value indicates that it is encoded in Base64.
 
 For example, four lines below HELML mean the same thing:
+
 ```python
 # Simple Key: Value
 Host: github.com
 
 # Key "Host" encoded in Base64
 -SG9zdA: github.com
-
 # Value "github.com" encoded in Base64
 # Please note that "-" stands immediately after a colon, without space.
 Host:-Z2l0aHViLmNvbQ
@@ -115,14 +110,15 @@ Host:-Z2l0aHViLmNvbQ
 The count of colons at the beginning of the line means the target nesting level.
 
 Example. Encode this in HELML:
+
 ```json
 {
 	"Host": "github.com",
 	"Names": {
-		"no_www": "github.com",
-		"www": "www.github.com"
+		"first name": "github",
+		"last name": "com"
 	},
-	"Test": "The test"
+	"Family": "repos"
 }
 ```
 Result:
@@ -171,6 +167,7 @@ and in this case we are talking about the zero (root) level of array nesting.
 Examples of how colon are parsed:
 
 ```python
+
 # three "level colons" and no "separating colon" (key X, value empty)
 :::X
 
@@ -192,7 +189,6 @@ This is a key
 # one "level colon", then the key " ", then the "separating colon", then the value " : :"
    : : : :
 ```
-
 ## Example deeper nesting
 
 Encode this JSON to HELML:
@@ -211,21 +207,18 @@ Encode this JSON to HELML:
 	"D": "111"
 }
 ```
-
 Result:
 ```sh
 A: 123
 
-B
- :X: 456
- :Y: 789
+B:
+  :X: 456
+  :Y: 789
 
- :Z
-  ::One:  1
-  ::Two: 2
- #
- :C: 888
-#
+  :Z:
+    ::One:  1
+    ::Two: 2
+  :C: 888
 D: 111
 ```
 
@@ -234,14 +227,13 @@ Note:
  - the HELML encoder added indents, blank lines and `#` signs at the end of nested structures - this does not mean anything to the parser, but is convenient for visual perception
  - of course, the addition of these symbols, intended for visual convenience, can be turned off
 
-
 # Explicit creation of sub-arrays
 
 To create a new (deeper) nesting level, you must specify a "key" and an empty "value".
 
 This "key" will become the name of the created sub-array in which nested elements will be placed.
 
-## -- *Note that the main concept of HELML was outlined above, and below we will talk about the nuances*
+#### ***`Note that the main concept of HELML was outlined above, and below we will talk about the nuances`***
 
 Consider an example of a NOT correct structure description:
 
@@ -256,6 +248,7 @@ Simply increasing the number of indents and "level colons" does not increase the
 Extra "level colons" are ignored.
 
 The result of HELML decoding in this example will be:
+
 ```json
 {
 	"A": "123",
@@ -267,12 +260,11 @@ The number of "level colons" only matters when it is less than the current nesti
 In this case, the record pointer returns to the nesting level that will correspond to
 the specified number of "level colons".
 
-
 # Two kinds of nested arrays
 
 Nested arrays are created by specifying a "key" and an empty value, and there are two options:
-   1) a key and a "separating colon" after which there is no value.
-   2) key without "separating colon" (in this case, an empty value is implied)
+  1) a key and a "separating colon" after which there is no value.
+  2) key without "separating colon" (in this case, an empty value is implied)
   
   - When a "separating colon" ends a line, an array is created with arbitrary keys `{...}`
   - When there is no "separating colon", an array is created with numeric keys `[...]`
@@ -283,26 +275,25 @@ work with "dictionaries" and "lists" is implemented differently.
 In JSON, JavaScript, Python, "lists" are usually written in square brackets, e.g.
 `[123, 456, 789]`, and arrays with arbitrary keys ("dictionaries", dict) are written in curly braces, for example,
 `{"A": 123, "B": 456}`.
-
-To preserve typing, HELML allows distinguishing lists of the form [...] from arrays of the form {...}.
-To do this, when creating a key for a nested array, a colon is added to its name.
+To preserve typing, HELML allows distinguishing lists of the form `[...]` from arrays of the form `{...}`.
+To do this, when creating a key for a nested array, a colon is added to its name, to specify `{...}`-array.
 
 For example, let's convert this JSON to HELML:
 ```json
 { "List": ["A","B","C"] }
 ```
+
 In HELML, this will have a colon after "List":
 ```python
-# Note the absence of : after List, it indicates that it will be a list with numeric keys
+## Note the absence of : after List, it indicates that it will be a list with numeric keys
 List
  :0: A
  :1: B
  :2: C
 ```
-
 If you add a colon after "List", then the array will be decoded like this:
 ```json
-{ "List": {"0": "A", "1": "B", "2": "C"} }
+{"List": {"0": "A", "1": "B", "2": "C"}}
 ```
 
 Thus, in HELML, colons after a key at the end of a line allow you to create arrays with arbitrary keys,
@@ -310,11 +301,12 @@ and this method is recommended in most cases. The second option, when there is n
 creates an array with the constraint that the keys in it must be numeric.
 
 For HELML lists, a special key "next number" is convenient, it allows you to write the above example like this:
+
 ```sh
 List
-  :--: A
-  :--: B
-  :--: C
+ :--: A
+ :--: B
+ :--: C
 ```
 
 # Special keys
@@ -342,6 +334,8 @@ Therefore, keys and values in Base64 format can be encoded both in the usual bas
 
 Note that the special keys `--`, `-+`, `-++` used in HELML are correct for decoding from base64url,
 but they are never obtained with correct coding. Therefore, special keys do not intersect with encoded ones.
+
+# Key "next number"
 
 If the key has the value "`--`", then such a key automatically receives the "next number",
 equal to the current number of elements in the nested array being written to.
@@ -415,6 +409,7 @@ There are three options for the number of spaces: 0, 1, and 2.
    Let's consider them in more detail
 
 ### Special case values:
+
 ! The number of spaces after the "splitting colon" is important,
 as it indicates special cases of value encoding.
 
@@ -442,7 +437,14 @@ as it indicates special cases of value encoding.
      - U - will be represented as "undefined" in JavaScript, or similar to N in other languages
    - if the value after two spaces does not match the options described above, then:
      - for such values, a custom handler CUSTOM_FORMAT_DECODER can be set
-     - if a custom decoder is not set, then the value will be returned "as is" (without two spaces
+     - if a custom decoder is not set, then the value will be returned "as is" (without two spaces)
+
+```python
+#For example, depending on the number of spaces, 123 will be represented as a number, or as a string:
+A: 123
+A:  123
+# if one space, then 123 will be returned as a string, if two, then it will be returned as an integer
+```
 
 ## Quoted values
 
@@ -452,24 +454,22 @@ The option to specify the string in quotes makes sense when:
    - double quotes allow you to specify special characters in slash format, instead of packing in Base64
 
 ```python
-     # specifying an empty string as a value:
-     test:""
+	# specifying an empty string as a value:
+    Test:""
 
-     # spaces at the beginning and end will be preserved, and the quotes will be discarded:
-     Hello: "Hello World"
+  # spaces at the beginning and end will be preserved, and the quotes will be discarded:
+  Hello:"  Hello World "
 
-     # the result will be the same as in the previous version:
-     Hello:' Hello World '
+	# the result will be the same as in the previous version:
+  Hello:'  Hello World '
+  # the result will be a string with quotes, i.e. the quotes will NOT be stripped.
+  # because the space after the colon indicates a "simple case" and the data is returned "as is":
+   Hello: " Hello World "
 
-     # the result will be a string with quotes, i.e. the quotes will NOT be stripped.
-     # because the space after the colon indicates a "simple case" and the data is returned "as is":
-     Hello: "Hello World"
-
-     # Here, the value will be with a newline character inside, and the double quotes will be discarded:
-     Hello: "Hello\n World"
-
-     # Here the value "\n" will not be converted to a newline character, the data will be returned as is, but without quotes:
-     Hello:' Hello\n World '
+  # Here, the value will be with a newline character inside, and the double quotes will be discarded:
+  Hello:"  Hello\n World  "
+	# Here the value "\n" will not be converted to a newline character, the data will be returned as is, but without quotes:
+    Hello:'  Hello\n World  '
 ```
 
 # Multi-line and single-line HELML
@@ -510,4 +510,4 @@ then transfer to another platform and restore the original data from HELML there
 * HELML implements the ["multilayer concept"](https://github.com/dynoser/HELML/blob/master/docs/MultiLayerArrays_ru.md),
    which allows you to get values that differ depending on the selection of layers.
 
-* In most cases, data in HELML will be more compact than in other markup languages.
+* In most cases, data in HELML will be more compact than in other markup languages.

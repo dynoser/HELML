@@ -1,5 +1,3 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
 class HELML {
     /**
      * Encodes the specified array into a HELM.
@@ -409,4 +407,4 @@ HELML.SPEC_TYPE_VALUES = {
     'INF': Infinity,
     'NIF': -Infinity
 };
-exports.default = HELML;
+export default HELML;
