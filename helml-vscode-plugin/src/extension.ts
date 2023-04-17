@@ -2,8 +2,9 @@
 
 import * as vscode from 'vscode';
 import HELML from './HELML';
-
 import * as extconfig from './extconfig';
+
+import * as codefolding from './codefolding';
 
 import * as onchangeshook from './onchangeshook';
 import * as hoverlook from './hoverlook';
@@ -112,6 +113,10 @@ export function activate(context: vscode.ExtensionContext) {
             }
             vscode.window.showTextDocument(newFile);
         })
+    );
+
+    context.subscriptions.push(
+        vscode.languages.registerFoldingRangeProvider('helml', new codefolding.HelmFoldingRangeProvider(':'))
     );
 
     context.subscriptions.push(onchangeshook.onChangeTextDisposable);

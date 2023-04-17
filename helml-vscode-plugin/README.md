@@ -6,6 +6,7 @@
 ## Features
 
  - HELML Syntax Highlighting
+ - HELML Code-Folding
  - Convert between JSON and HELML formats:
    - convert Selection from JSON to HELML
    - convert Selection to JSON from HELML
