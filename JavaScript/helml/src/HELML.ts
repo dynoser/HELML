@@ -15,6 +15,8 @@ export default class HELML {
     static CUSTOM_FORMAT_DECODER: ((value: string, spc_ch: string) => any) | null = null;
     static CUSTOM_VALUE_DECODER: ((value: string, spc_ch: string) => any) | null = null;
     static CUSTOM_VALUE_ENCODER: ((value: string, spc_ch: string) => any) | null = null;
+
+    static EOL = "\n"; // only for encoder, decoder will autodetect
     
     static SPEC_TYPE_VALUES: Record<string, any> = {
         'N': null,
@@ -42,7 +44,7 @@ export default class HELML {
         arr = HELML.iterablize(arr);
 
         // one-line-mode selector
-        let str_imp = one_line_mode ? "~" : "\n";
+        let str_imp = one_line_mode ? "~" : HELML.EOL;
         let url_mode = one_line_mode === 1;
         let lvl_ch = url_mode ? '.' : ':';
         let spc_ch = url_mode ? '_' : ' ';
@@ -109,6 +111,10 @@ export default class HELML {
                     results_arr.push('');
                 }
 
+                if (is_arr && key.charAt(0) !== '-' && /[{}\<\>\(\),\"\'?]/.test(key)) { // Encode list-key
+                    key = "-" + HELML.base64Uencode(key);
+                }
+
                 results_arr.push(ident + (is_arr ? key : key + lvl_ch));
 
                 value = HELML.iterablize(value);
@@ -133,7 +139,7 @@ export default class HELML {
         if (typeof get_layers === 'number' || typeof get_layers === 'string') {
             get_layers = [get_layers];
         }
-        let layers_list = new Set(['0']);
+        const layers_list = new Set(['0']);
         // convert all elements in layers_list to String type
         get_layers.forEach((item, index) => {
             if (typeof item === "number") {
@@ -145,7 +151,7 @@ export default class HELML {
         let spc_ch: string = ' ';
         let exploder_ch = "\n";
 
-        for (exploder_ch of ["\n", "~", "\r"]) {
+        for (exploder_ch of ["\r\n", "\n", "~", "\r"]) {
             if (src_rows.indexOf(exploder_ch) !== -1) {
                 if (exploder_ch === "~" && src_rows.endsWith('~')) {
                     lvl_ch = '.';
@@ -178,8 +184,8 @@ export default class HELML {
         for (let line of str_arr) {
             line = line.trim();
     
-            // Skip empty lines and comment lines starting with '#'
-            if (!line.length || line.charAt(0) === '#')
+            // Skip empty lines and comment
+            if (!line.length || line.charAt(0) === '#' || line.startsWith('//'))
                 continue;
 
             // Calculate the level of nesting for the current line by counting the number of colons at the beginning
@@ -191,8 +197,6 @@ export default class HELML {
             // If the line has colons at the beginning, remove them from the line
             if (level) {
                 line = line.substring(level);
-            } else if (line.startsWith('//')) { // skip line comment
-                continue;
             }
     
             // Split the line into a key and a value (or null if the line starts a new array)
@@ -209,10 +213,10 @@ export default class HELML {
             let extra_keys_cnt: number = stack.length - (level - min_level);
             if (extra_keys_cnt > 0) {
                 // removing extra keys from stack
-                 while(stack.length && extra_keys_cnt--) {
+                while(stack.length && extra_keys_cnt--) {
                     stack.pop();
-                 }
-                 layer_curr = layer_init;
+                }
+                layer_curr = layer_init;
             }
     
             // Find the parent element in the result array for the current key
@@ -223,10 +227,10 @@ export default class HELML {
 
             // Decode the key if it starts with an equals sign
             if (key.charAt(0) === '-') {
-                if (key === '--' || key === '---') {
+                if (key === '--') {
                     // Next number keys
                     key = (typeof parent === 'object') ? String(Object.keys(parent).length) : '0';
-                } else if (key === '-+' || key === '-++') {
+                } else if (key === '-+' || key === '-++' || key === '---') {
                     // Layer control keys
                     if (value !== null) {
                         value = value.trim();

@@ -5,8 +5,9 @@
 
 ## Features
 
- - HELML Syntax Highlighting
- - HELML Code-Folding
+ - Syntax Highlighting
+ - Code-Folding
+ - Breadcrumbs
  - Convert between JSON and HELML formats:
    - convert Selection from JSON to HELML
    - convert Selection to JSON from HELML
@@ -14,12 +15,10 @@
  - Convert HELML Selection to PHP-array
  - Convert HELML Selection to Python-array
 
-Press F1 and type "HELML", then select "HELML toJSON", "HELML fromJSON", etc.
+![Folding and Breadcrumbs](https://i.imgur.com/r5aab3d.gif)
 
-![Convert From/To JSON](https://i.imgur.com/bBCcYwm.gif)
+Press F1 and type "HELML", then select "HELML toJSON", "HELML fromJSON", etc.
 
 You can find these items by right-clicking on the selection:
 
 ![HELML Syntax highlighting](https://i.imgur.com/WVYC9wQ.gif)
-
-

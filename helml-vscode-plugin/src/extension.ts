@@ -5,6 +5,7 @@ import HELML from './HELML';
 import * as extconfig from './extconfig';
 
 import * as codefolding from './codefolding';
+import symbolsprov from "./symbolsprov";
 
 import * as onchangeshook from './onchangeshook';
 import * as hoverlook from './hoverlook';
@@ -123,6 +124,10 @@ export function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(onchangeshook.onChangeEventDisposable(context));
 
     vscode.languages.registerHoverProvider('helml', hoverlook.hoverProvider);
+
+    context.subscriptions.push(
+        vscode.languages.registerDocumentSymbolProvider({ language: 'helml' }, new symbolsprov())
+    );
 }
 
 export function deactivate() { }

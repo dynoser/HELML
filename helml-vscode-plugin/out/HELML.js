@@ -15,7 +15,7 @@ class HELML {
         // Check arr and convert to iterable (if possible)
         arr = HELML.iterablize(arr);
         // one-line-mode selector
-        let str_imp = one_line_mode ? "~" : "\n";
+        let str_imp = one_line_mode ? "~" : HELML.EOL;
         let url_mode = one_line_mode === 1;
         let lvl_ch = url_mode ? '.' : ':';
         let spc_ch = url_mode ? '_' : ' ';
@@ -72,6 +72,9 @@ class HELML {
                 if (HELML.ENABLE_KEY_UPLINES && spc_ch === ' ') {
                     results_arr.push('');
                 }
+                if (is_arr && key.charAt(0) !== '-' && /[{}\<\>\(\),\"\'?]/.test(key)) { // Encode list-key
+                    key = "-" + HELML.base64Uencode(key);
+                }
                 results_arr.push(ident + (is_arr ? key : key + lvl_ch));
                 value = HELML.iterablize(value);
                 HELML._encode(value, results_arr, level + 1, lvl_ch, spc_ch, is_arr);
@@ -93,7 +96,7 @@ class HELML {
         if (typeof get_layers === 'number' || typeof get_layers === 'string') {
             get_layers = [get_layers];
         }
-        let layers_list = new Set(['0']);
+        const layers_list = new Set(['0']);
         // convert all elements in layers_list to String type
         get_layers.forEach((item, index) => {
             if (typeof item === "number") {
@@ -103,7 +106,7 @@ class HELML {
         let lvl_ch = ':';
         let spc_ch = ' ';
         let exploder_ch = "\n";
-        for (exploder_ch of ["\n", "~", "\r"]) {
+        for (exploder_ch of ["\r\n", "\n", "~", "\r"]) {
             if (src_rows.indexOf(exploder_ch) !== -1) {
                 if (exploder_ch === "~" && src_rows.endsWith('~')) {
                     lvl_ch = '.';
@@ -128,8 +131,8 @@ class HELML {
         // Loop through each line in the input array
         for (let line of str_arr) {
             line = line.trim();
-            // Skip empty lines and comment lines starting with '#'
-            if (!line.length || line.charAt(0) === '#')
+            // Skip empty lines and comment
+            if (!line.length || line.charAt(0) === '#' || line.startsWith('//'))
                 continue;
             // Calculate the level of nesting for the current line by counting the number of colons at the beginning
             let level = 0;
@@ -139,9 +142,6 @@ class HELML {
             // If the line has colons at the beginning, remove them from the line
             if (level) {
                 line = line.substring(level);
-            }
-            else if (line.startsWith('//')) { // skip line comment
-                continue;
             }
             // Split the line into a key and a value (or null if the line starts a new array)
             const firstDiv = line.indexOf(lvl_ch);
@@ -167,11 +167,11 @@ class HELML {
             }
             // Decode the key if it starts with an equals sign
             if (key.charAt(0) === '-') {
-                if (key === '--' || key === '---') {
+                if (key === '--') {
                     // Next number keys
                     key = (typeof parent === 'object') ? String(Object.keys(parent).length) : '0';
                 }
-                else if (key === '-+' || key === '-++') {
+                else if (key === '-+' || key === '-++' || key === '---') {
                     // Layer control keys
                     if (value !== null) {
                         value = value.trim();
@@ -400,6 +400,7 @@ HELML.ENABLE_HASHSYMBOLS = true; // For encode: adding # after nested-blocks
 HELML.CUSTOM_FORMAT_DECODER = null;
 HELML.CUSTOM_VALUE_DECODER = null;
 HELML.CUSTOM_VALUE_ENCODER = null;
+HELML.EOL = "\n"; // only for encoder, decoder will autodetect
 HELML.SPEC_TYPE_VALUES = {
     'N': null,
     'U': undefined,

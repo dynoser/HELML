@@ -1,0 +1,96 @@
+"use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+const vscode = __importStar(require("vscode"));
+class HELMLsymprov {
+    provideDocumentSymbols(document, token) {
+        const symbols = [];
+        let currentLine;
+        let currentSymbol;
+        for (let i = 0; i < document.lineCount; i++) {
+            currentLine = document.lineAt(i).text.trim();
+            if (currentLine.endsWith(':')) {
+                // первый уровень символа
+                currentSymbol = new vscode.DocumentSymbol(currentLine.slice(0, -1), // name
+                '', // detail 
+                vscode.SymbolKind.String, // kind           type: vscode.SymbolKind
+                document.lineAt(i).range, // range          type: vscode.Range
+                document.lineAt(i).range // selectionRange type: vscode.Range
+                // children       type: vscode.DocumentSymbol
+                );
+                symbols.push(currentSymbol);
+            }
+            else if (currentLine.startsWith(':')) {
+                // второй уровень символа
+                if (currentSymbol) {
+                    const [name, value] = currentLine.slice(1).split(':').map(s => s.trim());
+                    const symbol = new vscode.DocumentSymbol(name, value, vscode.SymbolKind.Variable, document.lineAt(i).range, document.lineAt(i).range);
+                    currentSymbol.children.push(symbol);
+                }
+            }
+        }
+        return symbols;
+    }
+}
+exports.default = HELMLsymprov;
+// const decorationType = vscode.window.createTextEditorDecorationType({
+//     color: '#888'
+// });
+// function updateBreadcrumbs(editor: vscode.TextEditor) {
+//     if (editor.document.languageId !== 'helml') return;
+//     const breadcrumbs = [];
+//     // Получаем текущую позицию курсора в редакторе
+//     const cursorPos = editor.selection.active;
+//     // Получаем массив всех родительских элементов для текущей позиции
+//     let parent = editor.document.uri;
+//     while (parent && parent.path !== '/') {
+//         breadcrumbs.unshift(parent);
+//         parent = vscode.Uri.parse(parent.path.split('/').slice(0, -1).join('/'));
+//     }
+//     // Создаем массив декораций для отображения в панели состояния
+//     const decorations = breadcrumbs.map(uri => {
+//         const range = new vscode.Range(0, 0, 0, 0);
+//         const options = {
+//             range: range,
+//             hoverMessage: uri.path,
+//             isWholeLine: true
+//         };
+//         return options;
+//     });
+//     // Отображаем декорации в редакторе
+//     editor.setDecorations(decorationType, decorations);
+// }
+// export function onDidChangeEditorSet() {
+//     // Обновляем декорацию при изменении текущего выделения в редакторе
+//     vscode.window.onDidChangeTextEditorSelection(event => {
+//         updateBreadcrumbs(event.textEditor);
+//     });
+//     // Отображаем декорации при открытии нового редактора
+//     vscode.window.onDidChangeActiveTextEditor(editor => {
+//         if (editor) {
+//             updateBreadcrumbs(editor);
+//         }
+//     });
+// }

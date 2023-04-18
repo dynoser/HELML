@@ -1,0 +1,171 @@
+name: helml
+displayName: helml
+description: Plugin to encode/decode HELML data and syntaxes highliting
+version: 1.0.0
+publisher: dynoser
+license: MIT
+
+repository:
+  :type: git
+  :url: https://github.com/dynoser/HELML/tree/master/helml-vscode-plugin
+
+engines:
+  :vscode: ^1.65.0
+
+categories
+  :--: Programming Languages
+  :--: Formatters
+  :--: Other
+icon: images/icon.png
+
+activationEvents
+  :--: onLanguage:json
+  :--: onLanguage:jsonc
+  :--: onLanguage:plaintext
+  :--: onWebviewPanel:helml
+main: ./out/extension.js
+browser: ./out/web/extension.js
+web: out/web/extension.js
+
+contributes:
+
+  :languages
+
+    ::--:
+      :::id: helml
+
+      :::extensions
+        ::::--: .helml
+
+  :grammars
+
+    ::--:
+      :::language: helml
+      :::scopeName: source.helml
+      :::configuration: ./syntaxes/language-configuration.json
+      :::path: ./syntaxes/helml.tmLanguage.json
+
+  :commands
+
+    ::--:
+      :::command: helml.toJSON
+      :::title: HELML toJSON
+
+    ::--:
+      :::command: helml.fromJSON
+      :::title: HELML fromJSON
+
+    ::--:
+      :::command: helml.fromJSONDoc
+      :::title: HELML fromJSON NewDoc
+
+    ::--:
+      :::command: helml.toPHP
+      :::title: HELML toPHP
+
+    ::--:
+      :::command: helml.toPython
+      :::title: HELML toPython
+
+    ::--:
+      :::command: helml.toBase64url
+      :::title: toBase64url()
+
+    ::--:
+      :::command: helml.fromBase64url
+      :::title: fromBase64url()
+
+    ::--:
+      :::command: helml.toLINE
+      :::title: HELML to OneLINE-mode()
+
+    ::--:
+      :::command: helml.toURL
+      :::title: HELML to URL-mode()
+
+  :menus:
+
+    ::editor/context
+
+      :::--:
+        ::::command: helml.fromJSONDoc
+
+      :::--:
+        ::::command: helml.fromJSON
+
+      :::--:
+        ::::command: helml.toJSON
+
+  :configuration:
+    ::title: HELML Config
+
+    ::properties:
+
+      :::helml.enableident:
+        ::::type: number
+        ::::default:  1
+
+        ::::enum
+          :::::--:  0
+          :::::--:  1
+          :::::--:  2
+          :::::--:  3
+          :::::--:  4
+        ::::description: HELML encoder will add left-spaces indentation
+
+      :::helml.enablebones:
+        ::::type: boolean
+        ::::default:  T
+        ::::markdownDescription: HELML encoder will add next-num-keys (like `:--:`) instead of numbers
+
+      :::helml.enableuplines:
+        ::::type: boolean
+        ::::default:  T
+        ::::description: HELML encoder will add empty line before create-array-keys
+
+      :::helml.enablehashsym:
+        ::::type: boolean
+        ::::default:  T
+        ::::markdownDescription: HELML encoder will add `#`-symbol after nested-blocks
+
+      :::helml.getlayers:
+        ::::type: string
+        ::::default: 0
+        ::::description: HELML decoder layers list (comma separated)
+
+      :::helml.style.onelevelkeys:
+        ::::type: string
+        ::::default:-YmFja2dyb3VuZENvbG9yOiAjMjQyO35ib3JkZXJSYWRpdXM6IDE1JTs
+        ::::description: HELML decorator style for one-level-keys
+
+      :::helml.style.subkeys:
+        ::::type: string
+        ::::default:-YmFja2dyb3VuZENvbG9yOiAjMjI4O35ib3JkZXJSYWRpdXM6IDE1JTs
+        ::::description: HELML decorator style for sub-level-keys
+
+      :::helml.style.upkey:
+        ::::type: string
+        ::::default:-Ym9yZGVyOiAxcHggZG90dGVkICMwRDA7fnBhZGRpbmc6IDRweDs
+        ::::description: HELML upkey decorator style
+
+      :::helml.style.upkeylist:
+        ::::type: string
+        ::::default:-Ym9yZGVyOiAxcHggZG90dGVkICM4ODA7fnBhZGRpbmc6IDRweDs
+        ::::description: HELML upkey-list decorator style (for num-key arrays)
+
+      :::helml.style.errkeys:
+        ::::type: string
+        ::::default:-YmFja2dyb3VuZENvbG9yOiAjODAwO350ZXh0RGVjb3JhdGlvbjogdW5kZXJsaW5lIHdhdnk7
+        ::::description: HELML upkey-list decorator style (for num-key arrays)
+
+scripts:
+  :build: webpack
+
+devDependencies:
+  :@types/node: ^14.18.42
+  :@types/vscode: ^1.65.0
+  :@types/webpack-env: ^1.16.0
+  :source-map-loader: ^4.0.1
+  :ts-loader: ^9.4.2
+  :webpack: ^5.77.0
+  :webpack-cli: ^5.0.1

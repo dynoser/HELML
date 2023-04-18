@@ -41,6 +41,7 @@ const vscode = __importStar(require("vscode"));
 const HELML_1 = __importDefault(require("./HELML"));
 const extconfig = __importStar(require("./extconfig"));
 const codefolding = __importStar(require("./codefolding"));
+const symbolsprov_1 = __importDefault(require("./symbolsprov"));
 const onchangeshook = __importStar(require("./onchangeshook"));
 const hoverlook = __importStar(require("./hoverlook"));
 //import * as errlinesdecor from './errlinesdecor';
@@ -114,6 +115,7 @@ function activate(context) {
     context.subscriptions.push(onchangeshook.onChangeTextDisposable);
     context.subscriptions.push(onchangeshook.onChangeEventDisposable(context));
     vscode.languages.registerHoverProvider('helml', hoverlook.hoverProvider);
+    context.subscriptions.push(vscode.languages.registerDocumentSymbolProvider({ language: 'helml' }, new symbolsprov_1.default()));
 }
 exports.activate = activate;
 function deactivate() { }

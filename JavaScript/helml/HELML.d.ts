@@ -10,6 +10,7 @@ export default class HELML {
     static CUSTOM_FORMAT_DECODER: ((value: string, spc_ch: string) => any) | null;
     static CUSTOM_VALUE_DECODER: ((value: string, spc_ch: string) => any) | null;
     static CUSTOM_VALUE_ENCODER: ((value: string, spc_ch: string) => any) | null;
+    static EOL: string;
     static SPEC_TYPE_VALUES: Record<string, any>;
     /**
      * Encodes the specified array into a HELM.
