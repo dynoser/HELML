@@ -2,7 +2,7 @@
   "name": "helml",
   "displayName": "helml",
   "description": "Plugin to encode/decode HELML data and syntaxes highliting",
-  "version": "1.0.2",
+  "version": "1.0.5",
   "publisher": "dynoser",
   "license": "MIT",
   "repository": {
@@ -83,13 +83,27 @@
     "menus": {
       "editor/context": [
         {
-          "command": "helml.fromJSONDoc"
+          "command": "helml.fromJSONDoc",
+          "when": "editorTextFocus && helml.canJSON == true"
         },
         {
-          "command": "helml.fromJSON"
+          "command": "helml.fromJSON",
+          "when": "editorTextFocus && helml.canJSON == true"
         },
         {
-          "command": "helml.toJSON"
+          "command": "helml.toJSON",
+          "when": "editorTextFocus && helml.isIntegrated == true",
+          "title": "HELML to JSON"
+        },
+        {
+          "command": "helml.toPHP",
+          "when": "editorTextFocus && helml.canPHP == true",
+          "title": "HELML to PHP Array"
+        },
+        {
+          "command": "helml.toPython",
+          "when": "editorTextFocus && helml.canPython == true",
+          "title": "HELML to Python Array"
         }
       ]
     },

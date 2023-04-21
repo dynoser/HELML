@@ -97,17 +97,26 @@ class HELML {
             get_layers = [get_layers];
         }
         const layers_list = new Set(['0']);
-        // convert all elements in layers_list to String type
+        // convert all number-elements in layers_list toString
         get_layers.forEach((item, index) => {
             if (typeof item === "number") {
-                layers_list.add(item.toString());
+                item = item.toString();
             }
+            layers_list.add(item.toString());
         });
         let lvl_ch = ':';
         let spc_ch = ' ';
         let exploder_ch = "\n";
+        // 2. Skip "~" and spaces from begin
+        let stpos = 0;
+        for (; stpos < src_rows.length; stpos++) {
+            const ch = src_rows[stpos];
+            if (ch !== ' ' && ch !== "\t" && ch != '~')
+                break;
+        }
+        // 3. Detect string divider
         for (exploder_ch of ["\r\n", "\n", "~", "\r"]) {
-            if (src_rows.indexOf(exploder_ch) !== -1) {
+            if (src_rows.indexOf(exploder_ch, stpos) !== -1) {
                 if (exploder_ch === "~" && src_rows.endsWith('~')) {
                     lvl_ch = '.';
                     spc_ch = '_';
@@ -115,7 +124,8 @@ class HELML {
                 break;
             }
         }
-        let str_arr = src_rows.split(exploder_ch);
+        // 4. Explode string from stpos
+        let str_arr = src_rows.substring(stpos).split(exploder_ch);
         return HELML._decode(str_arr, layers_list, lvl_ch, spc_ch);
     }
     static _decode(str_arr, layers_list, lvl_ch, spc_ch) {

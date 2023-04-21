@@ -3,6 +3,11 @@
 All notable changes to the "helml" extension will be documented in this file.
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
+## [1.0.3]
+ - Added Multi-selection support
+ - Added where-dependent menu items
+ - Added ~-prefix mod
+
 ## [0.0.7]
  - Added HELML toJSON New Document
  - Renamed extension from "helmlext" to "helml"

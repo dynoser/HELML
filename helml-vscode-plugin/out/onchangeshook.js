@@ -25,7 +25,6 @@ var __importStar = (this && this.__importStar) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.onChangeEventDisposable = exports.onChangeTextDisposable = void 0;
 const vscode = __importStar(require("vscode"));
-//import * as errlinesdecor from './errlinesdecor';
 const blocklook = __importStar(require("./blocklook"));
 exports.onChangeTextDisposable = vscode.workspace.onDidChangeTextDocument(event => {
     var _a;
@@ -47,15 +46,6 @@ exports.onChangeTextDisposable = vscode.workspace.onDidChangeTextDocument(event 
                 tildasModify = true;
             }
         }
-        // This code is temporary removed
-        // const intersectedLines = errlinesdecor.errorLines.filter(x => changedLines.includes(x));
-        // if (intersectedLines.length) {
-        //     tildasModify = true;
-        //     editor.setDecorations(errlinesdecor.errorDecoration, []);
-        // }
-        // if (tildasModify) {
-        //     errlinesdecor.highlightErrors(editor);
-        // }
         if (changedLines.length > 1) {
             // do not continue for multiple-changes
             return;

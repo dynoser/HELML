@@ -1,5 +1,4 @@
 import * as vscode from 'vscode';
-//import * as errlinesdecor from './errlinesdecor';
 import * as blocklook from './blocklook';
 
 export let onChangeTextDisposable = vscode.workspace.onDidChangeTextDocument(event => {
@@ -24,18 +23,6 @@ export let onChangeTextDisposable = vscode.workspace.onDidChangeTextDocument(eve
             }
         }
         
-        // This code is temporary removed
-
-        // const intersectedLines = errlinesdecor.errorLines.filter(x => changedLines.includes(x));
-
-        // if (intersectedLines.length) {
-        //     tildasModify = true;
-        //     editor.setDecorations(errlinesdecor.errorDecoration, []);
-        // }
-        // if (tildasModify) {
-        //     errlinesdecor.highlightErrors(editor);
-        // }
-
         if (changedLines.length > 1) {
             // do not continue for multiple-changes
             return;

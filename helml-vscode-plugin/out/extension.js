@@ -42,9 +42,9 @@ const HELML_1 = __importDefault(require("./HELML"));
 const extconfig = __importStar(require("./extconfig"));
 const codefolding = __importStar(require("./codefolding"));
 const symbolsprov_1 = __importDefault(require("./symbolsprov"));
+const menucontext = __importStar(require("./menucontext"));
 const onchangeshook = __importStar(require("./onchangeshook"));
 const hoverlook = __importStar(require("./hoverlook"));
-//import * as errlinesdecor from './errlinesdecor';
 const blocklook = __importStar(require("./blocklook"));
 const fromjson = __importStar(require("./fromjson"));
 const phparr_1 = __importDefault(require("./phparr"));
@@ -56,19 +56,29 @@ function cre_sel_conv_fn(converter_fn) {
         if (!editor) {
             return;
         }
-        const { document, selection } = editor;
-        const sel_text = document.getText(selection);
-        if (!sel_text) {
+        // Multi-selections support
+        const { document, selections } = editor;
+        const selectedTexts = [];
+        for (const selection of selections) {
+            const sel_text = document.getText(selection);
+            if (sel_text) {
+                selectedTexts.push(sel_text);
+            }
+        }
+        if (selectedTexts.length === 0) {
             vscode.window.showWarningMessage('No text selected!');
             return;
         }
-        const convertedText = converter_fn(sel_text);
+        const combinedText = selectedTexts.join("\n");
+        const convertedText = converter_fn(combinedText);
         if (convertedText) {
             editor.edit(editBuilder => {
-                editBuilder.replace(selection, convertedText);
+                editBuilder.replace(editor.selection, convertedText);
+            }).then(() => {
+                // call a reaction to a change in the selection
+                menucontext.onSelectionChangeByEditor(editor);
             });
             blocklook.clearAllDecorations(editor);
-            //errlinesdecor.clearAllDecorations(editor);
         }
     };
 }
@@ -116,6 +126,7 @@ function activate(context) {
     context.subscriptions.push(onchangeshook.onChangeEventDisposable(context));
     vscode.languages.registerHoverProvider('helml', hoverlook.hoverProvider);
     context.subscriptions.push(vscode.languages.registerDocumentSymbolProvider({ language: 'helml' }, new symbolsprov_1.default()));
+    vscode.window.onDidChangeTextEditorSelection(menucontext.onSelectionChange);
 }
 exports.activate = activate;
 function deactivate() { }
@@ -127,8 +138,8 @@ function SELECTIONtoBase64url(sel_text) {
     }
     catch (e) {
         vscode.window.showErrorMessage(`Failed encode to base64url: ${e.message}`);
-        return null;
     }
+    return null;
 }
 exports.SELECTIONtoBase64url = SELECTIONtoBase64url;
 function SELECTIONfromBase64url(sel_text) {
@@ -138,92 +149,109 @@ function SELECTIONfromBase64url(sel_text) {
     }
     catch (e) {
         vscode.window.showErrorMessage(`Failed decode from base64url: ${e.message}`);
-        return null;
     }
+    return null;
 }
 exports.SELECTIONfromBase64url = SELECTIONfromBase64url;
 function HELMLtoURL(sel_text) {
     try {
-        let objArr = fromjson.decodeJSONtry2(sel_text);
-        if (objArr === null) {
-            objArr = HELML_1.default.decode(sel_text, extconfig.HELMLLayersList);
+        let objArr = objFromHELML(sel_text);
+        if (objArr !== null) {
+            const code_str = HELML_1.default.encode(objArr, 1);
+            return code_str;
         }
-        const code_str = HELML_1.default.encode(objArr, 1);
-        return code_str;
     }
     catch (e) {
         vscode.window.showErrorMessage(`Failed encode to HELML-url: ${e.message}`);
-        return null;
     }
+    return null;
 }
 exports.HELMLtoURL = HELMLtoURL;
 function HELMLtoLINE(sel_text) {
     try {
-        let objArr = fromjson.decodeJSONtry2(sel_text);
-        if (objArr === null) {
-            objArr = HELML_1.default.decode(sel_text, extconfig.HELMLLayersList);
+        let objArr = objFromHELML(sel_text);
+        if (objArr !== null) {
+            const code_str = HELML_1.default.encode(objArr, 2);
+            return code_str;
         }
-        const code_str = HELML_1.default.encode(objArr, 2);
-        return code_str;
     }
     catch (e) {
         vscode.window.showErrorMessage(`Failed encode to HELML-url: ${e.message}`);
-        return null;
     }
+    return null;
 }
 exports.HELMLtoLINE = HELMLtoLINE;
 function HELMLtoPython(sel_text) {
     try {
-        let objArr = fromjson.decodeJSONtry2(sel_text);
-        if (objArr === null) {
-            objArr = HELML_1.default.decode(sel_text, extconfig.HELMLLayersList);
+        let objArr = objFromHELML(sel_text);
+        if (objArr !== null) {
+            const code_str = pythonarr_1.default.toPythonArr(objArr, 1);
+            return code_str;
         }
-        const code_str = pythonarr_1.default.toPythonArr(objArr, 1);
-        return code_str;
     }
     catch (e) {
-        console.error("Error: failed to encode HELML to Python code", e);
         vscode.window.showErrorMessage('Failed to encode HELML to Python code');
-        return null;
     }
+    return null;
 }
 exports.HELMLtoPython = HELMLtoPython;
 function HELMLtoPHP(sel_text) {
     try {
-        let objArr = fromjson.decodeJSONtry2(sel_text);
-        if (objArr === null) {
-            objArr = HELML_1.default.decode(sel_text, extconfig.HELMLLayersList);
+        let objArr = objFromHELML(sel_text);
+        if (objArr !== null) {
+            const code_str = phparr_1.default.toPHParr(objArr, 1);
+            return code_str;
         }
-        const code_str = phparr_1.default.toPHParr(objArr, 1);
-        return code_str;
     }
     catch (e) {
-        console.error("Error: failed to encode HELML to PHP code", e);
-        vscode.window.showErrorMessage('Failed to encode HELML to PHP code');
-        return null;
+        vscode.window.showErrorMessage('Failed to convert HELML to PHP array');
     }
+    return null;
 }
 exports.HELMLtoPHP = HELMLtoPHP;
 function HELMLtoJSON(sel_text) {
     try {
-        let objArr = fromjson.decodeJSONtry2(sel_text);
-        if (objArr === null) {
-            objArr = HELML_1.default.decode(sel_text, extconfig.HELMLLayersList);
+        let objArr = objFromHELML(sel_text);
+        if (typeof objArr === 'object' && objArr !== null) {
+            const json_str = JSON.stringify(objArr, null, '\t');
+            return json_str;
         }
-        const json_str = JSON.stringify(objArr, null, '\t');
-        return json_str;
     }
     catch (e) {
-        console.error("Error: failed to encode HELML to JSON", e);
-        vscode.window.showErrorMessage('Failed to encode HELML to JSON');
-        return null;
+        vscode.window.showErrorMessage('Failed to convert HELML to JSON');
     }
+    return null;
 }
 exports.HELMLtoJSON = HELMLtoJSON;
+function objFromHELML(sel_text) {
+    // skip spaces from left
+    let i = 0;
+    while (i < sel_text.length && (sel_text[i] === " " || sel_text[i] === "\t" || sel_text[i] === "\n")) {
+        i++;
+    }
+    // get first char
+    let ench = sel_text.charAt(i);
+    // may be it's json?
+    let objArr = (ench === "{") ? fromjson.decodeJSONtry2(sel_text) : null;
+    if (objArr !== null) {
+        // yes, it is JSON
+        return objArr;
+    }
+    // may be selected text is enclosed in quotations?
+    if ('`\'"'.indexOf(ench) >= 0 && sel_text.endsWith(ench)) {
+        // yes, remove quotations
+        sel_text = sel_text.slice(i + 1, -1);
+    }
+    // decode from HELML
+    return HELML_1.default.decode(sel_text, extconfig.HELMLLayersList);
+}
 function HELMLfromJSON(sel_text) {
     let objArr = fromjson.decodeJSONtry2(sel_text);
     if (objArr !== null) {
         const helml_str = HELML_1.default.encode(objArr);
+        if (!menucontext.docIsHELML) {
+            return "~\n" + helml_str;
+        }
         return helml_str;
     }
     vscode.window.showErrorMessage('Failed to decode JSON to HELML!');

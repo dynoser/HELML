@@ -21,4 +21,4 @@ Press F1 and type "HELML", then select "HELML toJSON", "HELML fromJSON", etc.
 
 You can find these items by right-clicking on the selection:
 
-![HELML Syntax highlighting](https://i.imgur.com/WVYC9wQ.gif)
+![HELML Right Click Menu](https://i.imgur.com/s2pEnAU.gif)

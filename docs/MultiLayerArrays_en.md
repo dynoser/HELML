@@ -219,4 +219,4 @@ Recall again that the "current layer" is set to '0' in the following cases:
   - when explicitly specifying this layer: `"-+:0"`
   - when specifying `"-+"` without parameters, if the current layer name is not numeric.
 
-It is important not to forget to return the entry to layer `0` if a jump to another layer was made above.
+It is important not to forget to return the entry to layer `0` if a jump to another layer was made above.
