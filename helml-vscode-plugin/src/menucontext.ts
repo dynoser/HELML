@@ -1,12 +1,10 @@
 import * as vscode from 'vscode';
 
 export let docIsHELML: boolean = false;
-let menuToJSONon: boolean = false;
-let menuFromJSONon: boolean = false;
-let menuToPHPon: boolean = false;
-let menuToPython: boolean = false;
-let docIsPHP: boolean = false;
-let docIsPython: boolean = false;
+let menuCanHELML: boolean = false;
+let menuCanJSON: boolean = false;
+let menuCanB64: boolean = false;
+let menuCanToB64: boolean = false;
 
 export function onSelectionChange(event: vscode.TextEditorSelectionChangeEvent)
 {
@@ -19,87 +17,90 @@ export function onSelectionChangeByEditor(textEditor: vscode.TextEditor) {
     const langID = document.languageId;
 
     docIsHELML = langID === 'helml';
-    docIsPHP = langID === 'php';
-    docIsPython = langID === 'python';
-
-    let newMenuToJSON = false;
-    let newMenuFromJSON = langID === 'json';
-    let newMenuToPHP = false;
-    let newMenuToPython = false;
+    let canHELML = docIsHELML;
+    let canJSON = langID === 'json';
+    let canB64 = false;
+    let canToB64 = false;
 
     // try to detect integrateg-HELML by ~-prefix
     const sel_text = document.getText(selection);
     if (sel_text) {
+        // one line in selection?
+        let isOneLine = sel_text.indexOf("\n") < 0;
+        if (isOneLine && sel_text.indexOf("\r") >= 0) {
+            isOneLine = false;
+        }
+
         let strlen = sel_text.length;
         let lastCh = '';
-        // reduce end of line of spaces
+
+        // reduce line by end-spaces
+        const spcs = " \t\n\r";
         while(strlen) {
             lastCh = sel_text[strlen-1];
-            if (lastCh !== ' ' && lastCh !== "\t" && lastCh !== "\n") break;
+            if (spcs.indexOf(lastCh) < 0) break;
             strlen--;
         }
 
-        // skip spaces from left
+        // reduce line by start-spaces
         let i = 0;
-        while (i < strlen && (sel_text[i] === " " || sel_text[i] === "\t" || sel_text[i] === "\n")) {
+        while (i < strlen) {
+            if (spcs.indexOf(sel_text[i]) < 0) break;
             i++;
             strlen--;
         }
 
         if (strlen) {
-            let firstCh = sel_text.charAt(i);
+            const firstCh = sel_text.charAt(i);
 
-            // try detect JSON-object between {}
-            if ((firstCh === '{' && lastCh === "}") || (firstCh === '[' && lastCh === ']')) {
-                newMenuFromJSON = true;
-            } else if (!docIsHELML) {
-                // if the selected text is enclosed in quotations
-                if ('`\'"'.indexOf(firstCh) >= 0 && lastCh === firstCh) {
-                    newMenuToJSON = true;
-                } else {
-                    // check "~" inside
-                    newMenuToJSON = (sel_text.indexOf('~') >= 0);
+            // Is the selected text enclosed in quotation?
+            const inQuotas = (lastCh === firstCh) && ('`\'"'.indexOf(firstCh) >= 0);
+
+            // Is the selected text enclosed in {} or [] ?
+            const inBbrackets = inQuotas ? false : (firstCh === '{' && lastCh === "}") || (firstCh === '[' && lastCh === ']');
+
+            // May be JSON-object ?
+            canJSON = canJSON || inBbrackets;
+
+            let haveTilda = sel_text.indexOf('~') >= 0;
+
+            canHELML = inBbrackets ? false : (docIsHELML || haveTilda);
+
+            if (isOneLine) {
+                if (!haveTilda && !inBbrackets) {
+                    canB64 = /^[A-Za-z0-9\-_+\/=]+$/.test(sel_text.substring(i, i+strlen));
                 }
-                if (docIsPHP) {
-                    newMenuToPHP = newMenuToJSON;
-                }
-                if (docIsPython) {
-                    newMenuToPython = newMenuToJSON;
-                }
+                canToB64 = docIsHELML;
             }
+
         }
     }
 
-    if (docIsHELML) {
-        newMenuToJSON = true;
-    }
-
-    if (newMenuToJSON !== menuToJSONon) {
-        menuToJSONon = newMenuToJSON;
-        vscode.commands.executeCommand("setContext", "helml.isIntegrated", menuToJSONon).then(() => {
-            return menuToJSONon;
+    if (canHELML !== menuCanHELML) {
+        menuCanHELML = canHELML;
+        vscode.commands.executeCommand("setContext", "helml.canHELML", menuCanHELML).then(() => {
+            return menuCanHELML;
         });
     }
 
-    if (newMenuFromJSON !== menuFromJSONon) {
-        menuFromJSONon = newMenuFromJSON;
-        vscode.commands.executeCommand("setContext", "helml.canJSON", menuFromJSONon).then(() => {
-            return menuFromJSONon;
+    if (canJSON !== menuCanJSON) {
+        menuCanJSON = canJSON;
+        vscode.commands.executeCommand("setContext", "helml.canJSON", menuCanJSON).then(() => {
+            return menuCanJSON;
         });
     }
 
-    if (newMenuToPHP !== menuToPHPon) {
-        menuToPHPon = newMenuToPHP;
-        vscode.commands.executeCommand("setContext", "helml.canPHP", menuToPHPon).then(() => {
-            return menuToPHPon;
+    if (canB64 !== menuCanB64) {
+        menuCanB64 = canB64;
+        vscode.commands.executeCommand("setContext", "helml.canB64", menuCanB64).then(() => {
+            return menuCanB64;
         });
     }
 
-    if (newMenuToPython !== menuToPython) {
-        menuToPython = newMenuToPython;
-        vscode.commands.executeCommand("setContext", "helml.canPython", menuToPython).then(() => {
-            return menuToPython;
+    if (canToB64 !== menuCanToB64) {
+        menuCanToB64 = canToB64;
+        vscode.commands.executeCommand("setContext", "helml.canToB64", menuCanToB64).then(() => {
+            return menuCanToB64;
         });
     }
-
 }

@@ -472,26 +472,42 @@ The option to specify the string in quotes makes sense when:
     Hello:'  Hello\n World  '
 ```
 
-# Multi-line and single-line HELML
+# Multi-line and one-line HELML
 
-If you "glue" all HELML lines with the tilde `~`, then the parser will understand this character as a "line feed".
+The parser replaces the special character `~` with the newline character.
+In other words, the `~` character in HELML can be used instead of the newline character.
 
-It is a "single-line HELML". It differs from "multi-line HELML" by the line separator.
+Using the `~` character instead of a "newline" allows you to "glue" HELML into one line.
+Let's call it "one line HELML".
 
-One-line HELML is useful when for some reason you can't use "newline".
-For example, if you need to put a HELML code in a URL, or in a command line argument, etc.
+One-line HELML is good when it's inconvenient to use the usual "line feed".
+For example, if you need to put a HELML code in a URL, or in a command argument, etc.
 
-This is an easy way to pass an arbitrary array as a string parameter while preserving its structure and data types.
+This is the simplest way to pass an array as a string parameter while preserving its structure and data types.
 
-In addition, there is a special URL mode that replaces escape colons and spaces with "`.`" and "`_`" respectively.
-The choice of these characters to replace is because the "urlencode" (RFC 3986) transformation does not change them.
-A sign of encoding in this mode is the presence of the `~` character at the end of a single-line HELML line.
+## Additional roles of the special character `~`
 
-Thus, two variants of a one-line HELML are distinguished:
-  - a simple one-line HELML, when the lines are concatenated through the `~` sign
-  - HELML URL mode, which additionally replaces colons and spaces with `.` and `_`.
+The `~` special character has the following additional features:
 
-All options are decoded by the same decoder, the encoding option used is determined automatically.
+### HELML encoding prefix
+
+When several data markup languages are used simultaneously in the text, it is important to have a feature that allows
+quickly distinguish the format of interest from others. This is important, for example, for syntax highlighting.
+
+To do this, it is recommended to add the `~` sign at the beginning of the HELML markup.
+This is a sign for parsers, indicating that there may be HELML markup next.
+
+### Postfix HELML encoding
+
+Sometimes you need to mark the end of HELML markup, and there is a postfix for this: `~#: ~`
+
+Postfic is structured like this: two control characters are enclosed between `~#` and `~`: a colon and a space.
+These characters can be replaced by others. For example, for URL encoding it is convenient to replace them with "`.`" and "`_`",
+since the "urlencode" conversion (RFC 3986) does not change them. With this replacement, the postfix will be: `~#._~`.
+
+So, the end of HELML markup can be either `~#: ~` or `~#._~` for single-line URL mode.
+
+All HELML variants are decoded by the same decoder.
 
 # Results
 
@@ -510,4 +526,4 @@ then transfer to another platform and restore the original data from HELML there
 * HELML implements the ["multilayer concept"](https://github.com/dynoser/HELML/blob/master/docs/MultiLayerArrays_ru.md),
    which allows you to get values that differ depending on the selection of layers.
 
-* In most cases, data in HELML will be more compact than in other markup languages.
+* In most cases, data in HELML will be more compact than in other markup languages.

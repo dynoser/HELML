@@ -19,8 +19,8 @@ import phparr from './phparr';
 import pythonarr from './pythonarr';
 
 // Create selection-converter function envelope for specified converter_fn
-function cre_sel_conv_fn(converter_fn: (text: string) => string | null) {
-    return () => {
+function cre_sel_conv_fn(converter_fn: (text: string) => string | null, targetLang: string = '') {
+    return async () => {
         const editor = vscode.window.activeTextEditor;
         if (!editor) {
             return;
@@ -36,23 +36,37 @@ function cre_sel_conv_fn(converter_fn: (text: string) => string | null) {
                 selectedTexts.push(sel_text);
             }
         }
+        let combinedText = selectedTexts.join("\n");
         
-        if (selectedTexts.length === 0) {
-            vscode.window.showWarningMessage('No text selected!');
-            return;
+        let wholeDocSel = combinedText.length < 3;
+        let docIsSaved = !document.isDirty;
+
+        if (wholeDocSel) {
+            if (!targetLang) {
+                vscode.window.showWarningMessage('No text selected!');
+                return;
+            }
+            combinedText = document.getText();
         }
-        
-        const combinedText = selectedTexts.join("\n");
 
         const convertedText = converter_fn(combinedText);
+
         if (convertedText) {
-            editor.edit(editBuilder => {
-                editBuilder.replace(editor.selection, convertedText);
-            }).then(() => {
-                // call a reaction to a change in the selection
-                menucontext.onSelectionChangeByEditor(editor);
-            });
-            blocklook.clearAllDecorations(editor);
+            if (targetLang) {
+                const newFile = await vscode.workspace.openTextDocument({
+                    content: convertedText,
+                    language: targetLang,
+                });
+                vscode.window.showTextDocument(newFile);
+            } else {
+                editor.edit(editBuilder => {
+                    editBuilder.replace(editor.selection, convertedText);
+                }).then(() => {
+                    // call a reaction to a change in the selection
+                    menucontext.onSelectionChangeByEditor(editor);
+                });
+                blocklook.clearAllDecorations(editor);
+            }
         }
     };
 }
@@ -64,6 +78,11 @@ export function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(
         vscode.commands.registerCommand('helml.toJSON', cre_sel_conv_fn(HELMLtoJSON))
     );
+
+    context.subscriptions.push(
+        vscode.commands.registerCommand('helml.toJSONDoc', cre_sel_conv_fn(HELMLtoJSON, 'json'))
+    );
+
 
     context.subscriptions.push(
         vscode.commands.registerCommand('helml.fromJSON', cre_sel_conv_fn(HELMLfromJSON))
@@ -94,39 +113,7 @@ export function activate(context: vscode.ExtensionContext) {
     );
 
     context.subscriptions.push(
-        vscode.commands.registerCommand('helml.fromJSONDoc', async () => {
-            const editor = vscode.window.activeTextEditor;
-            if (!editor) {
-                return;
-            }
-
-            const { document, selection } = editor;
-            let sel_text = document.getText(selection);
-
-            let wholeDocSel = !sel_text;
-            let docIsSaved = !document.isDirty;
-            let canCloseOld = wholeDocSel && docIsSaved;
-
-            if (sel_text) {
-                if (sel_text === document.getText()) {
-                    wholeDocSel = true;
-                }
-            } else {
-                sel_text = document.getText();
-            }
-
-            let newFile: any;
-            const convertedText = HELMLfromJSON(sel_text);
-            if (convertedText) {
-                let fileName = document.fileName;
-
-                newFile = await vscode.workspace.openTextDocument({
-                    content: convertedText,
-                    language: 'helml',
-                });
-            }
-            vscode.window.showTextDocument(newFile);
-        })
+        vscode.commands.registerCommand('helml.fromJSONDoc', cre_sel_conv_fn(HELMLfromJSON, 'helml'))
     );
 
     context.subscriptions.push(
@@ -149,8 +136,8 @@ export function deactivate() { }
 
 export function SELECTIONtoBase64url(sel_text: string): string | null {
     try {
-        const inBase64url = HELML.base64Uencode(sel_text);
-        return inBase64url;
+        const inBase64url = HELML.base64Uencode(sel_text.trim());
+        return '-' + inBase64url;
     } catch(e: any) {
         vscode.window.showErrorMessage(`Failed encode to base64url: ${e.message}`);
     }
@@ -159,7 +146,9 @@ export function SELECTIONtoBase64url(sel_text: string): string | null {
 
 export function SELECTIONfromBase64url(sel_text: string): string | null {
     try {
-        const inBase64url = HELML.base64Udecode(sel_text);
+        const pfx = sel_text.charAt(0) === '-';
+        const inBase64url = HELML.base64Udecode(pfx ? sel_text.substring(1) : sel_text);
+        if (pfx) return ' ' + inBase64url;
         return inBase64url;
     } catch(e: any) {
         vscode.window.showErrorMessage(`Failed decode from base64url: ${e.message}`);

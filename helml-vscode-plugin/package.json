@@ -2,7 +2,7 @@
   "name": "helml",
   "displayName": "helml",
   "description": "Plugin to encode/decode HELML data and syntaxes highliting",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "publisher": "dynoser",
   "license": "MIT",
   "repository": {
@@ -45,39 +45,43 @@
     "commands": [
       {
         "command": "helml.toJSON",
-        "title": "HELML toJSON"
+        "title": "HELML to JSON"
+      },
+      {
+        "command": "helml.toJSONDoc",
+        "title": "HELML to JSON NewDoc"
       },
       {
         "command": "helml.fromJSON",
-        "title": "HELML fromJSON"
+        "title": "JSON to HELML"
       },
       {
         "command": "helml.fromJSONDoc",
-        "title": "HELML fromJSON NewDoc"
+        "title": "JSON to HELML NewDoc"
       },
       {
         "command": "helml.toPHP",
-        "title": "HELML toPHP"
+        "title": "HELML to PHP Array"
       },
       {
         "command": "helml.toPython",
-        "title": "HELML toPython"
+        "title": "HELML to Python Dict"
       },
       {
         "command": "helml.toBase64url",
-        "title": "toBase64url()"
+        "title": "Encode to Base64url"
       },
       {
         "command": "helml.fromBase64url",
-        "title": "fromBase64url()"
+        "title": "Decode from Base64url"
       },
       {
         "command": "helml.toLINE",
-        "title": "HELML to OneLINE-mode()"
+        "title": "HELML to one-line"
       },
       {
         "command": "helml.toURL",
-        "title": "HELML to URL-mode()"
+        "title": "HELML to URL"
       }
     ],
     "menus": {
@@ -88,22 +92,35 @@
         },
         {
           "command": "helml.fromJSON",
-          "when": "editorTextFocus && helml.canJSON == true"
+          "when": "editorTextFocus && editorHasSelection && helml.canJSON == true"
         },
         {
           "command": "helml.toJSON",
-          "when": "editorTextFocus && helml.isIntegrated == true",
-          "title": "HELML to JSON"
+          "when": "editorTextFocus && editorHasSelection && helml.canHELML == true"
+        },
+        {
+          "command": "helml.toJSONDoc",
+          "when": "editorTextFocus && helml.canHELML == true"
         },
         {
           "command": "helml.toPHP",
-          "when": "editorTextFocus && helml.canPHP == true",
-          "title": "HELML to PHP Array"
+          "when": "editorTextFocus && editorHasSelection && helml.canHELML && editorLangId == php"
         },
         {
           "command": "helml.toPython",
-          "when": "editorTextFocus && helml.canPython == true",
-          "title": "HELML to Python Array"
+          "when": "editorTextFocus && editorHasSelection && helml.canHELML && editorLangId == python"
+        },
+        {
+          "command": "helml.toPython",
+          "when": "editorTextFocus && editorHasSelection && helml.canHELML && editorLangId == python"
+        },
+        {
+          "command": "helml.fromBase64url",
+          "when": "editorTextFocus && editorHasSelection && helml.canB64"
+        },
+        {
+          "command": "helml.toBase64url",
+          "when": "editorTextFocus && editorHasSelection && helml.canToB64"
         }
       ]
     },
@@ -116,6 +133,18 @@
           "enum": [0, 1, 2, 3, 4],
           "description": "HELML encoder will add left-spaces indentation"
         },
+
+        "helml.addprefix": {
+          "type": "boolean",
+          "default": false,
+          "markdownDescription": "HELML encoder will add `~` prefix"
+        },
+        "helml.addpostfix": {
+          "type": "boolean",
+          "default": false,
+          "markdownDescription": "HELML encoder will add `~#: ~` postfix"
+        },
+
         "helml.enablebones": {
           "type": "boolean",
           "default": true,

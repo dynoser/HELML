@@ -15,10 +15,22 @@ export function reloadConfig(event: vscode.ConfigurationChangeEvent | null = nul
     const enablebones = config.get<boolean>('enablebones');
     const enableuplines = config.get<boolean>('enableuplines');
     const enablehashsym = config.get<boolean>('enablehashsym');
+    const addprefix = config.get<boolean>('addprefix');
+    const addpostfix = config.get<boolean>('addpostfix');
 
     if (num_spc_ident !== undefined && num_spc_ident !== HELML.ENABLE_SPC_IDENT) {
         // config.update('enableident', enableident, true);
         HELML.ENABLE_SPC_IDENT = num_spc_ident;
+    }
+
+    if (addprefix !== undefined && addprefix !== HELML.ADD_PREFIX) {
+        // config.update('enablebones', enablebones, true);
+        HELML.ADD_PREFIX = addprefix;
+    }
+
+    if (addpostfix !== undefined && addpostfix !== HELML.ADD_POSTFIX) {
+        // config.update('enablebones', enablebones, true);
+        HELML.ADD_POSTFIX = addpostfix;
     }
 
     if (enablebones !== undefined && enablebones !== HELML.ENABLE_BONES) {

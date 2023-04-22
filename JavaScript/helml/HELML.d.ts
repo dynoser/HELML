@@ -7,6 +7,8 @@ export default class HELML {
     static ENABLE_SPC_IDENT: number;
     static ENABLE_KEY_UPLINES: boolean;
     static ENABLE_HASHSYMBOLS: boolean;
+    static ADD_PREFIX: boolean;
+    static ADD_POSTFIX: boolean;
     static CUSTOM_FORMAT_DECODER: ((value: string, spc_ch: string) => any) | null;
     static CUSTOM_VALUE_DECODER: ((value: string, spc_ch: string) => any) | null;
     static CUSTOM_VALUE_ENCODER: ((value: string, spc_ch: string) => any) | null;

@@ -39,9 +39,19 @@ function reloadConfig(event = null) {
     const enablebones = config.get('enablebones');
     const enableuplines = config.get('enableuplines');
     const enablehashsym = config.get('enablehashsym');
+    const addprefix = config.get('addprefix');
+    const addpostfix = config.get('addpostfix');
     if (num_spc_ident !== undefined && num_spc_ident !== HELML_1.default.ENABLE_SPC_IDENT) {
         // config.update('enableident', enableident, true);
         HELML_1.default.ENABLE_SPC_IDENT = num_spc_ident;
+    }
+    if (addprefix !== undefined && addprefix !== HELML_1.default.ADD_PREFIX) {
+        // config.update('enablebones', enablebones, true);
+        HELML_1.default.ADD_PREFIX = addprefix;
+    }
+    if (addpostfix !== undefined && addpostfix !== HELML_1.default.ADD_POSTFIX) {
+        // config.update('enablebones', enablebones, true);
+        HELML_1.default.ADD_POSTFIX = addpostfix;
     }
     if (enablebones !== undefined && enablebones !== HELML_1.default.ENABLE_BONES) {
         // config.update('enablebones', enablebones, true);

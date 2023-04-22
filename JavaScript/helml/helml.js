@@ -9,7 +9,7 @@ class HELML {
      * @returns {string} The encoded HELM-like string.
      */
     static encode(arr, one_line_mode = 0) {
-        let results_arr = [];
+        let results_arr = HELML.ADD_PREFIX ? ['~'] : [];
         // Check arr and convert to iterable (if possible)
         arr = HELML.iterablize(arr);
         // one-line-mode selector
@@ -25,8 +25,8 @@ class HELML {
             is_list = keys.every((key, index) => key === expectedNumKeys[index]);
         }
         HELML._encode(arr, results_arr, 0, lvl_ch, spc_ch, is_list);
-        if (url_mode) {
-            results_arr.push('');
+        if (lvl_ch !== ':' || spc_ch !== ' ' || HELML.ADD_POSTFIX) {
+            results_arr.push('#' + lvl_ch + spc_ch + '~');
         }
         else if (one_line_mode) {
             results_arr = results_arr
@@ -89,14 +89,14 @@ class HELML {
         }
     }
     static decode(src_rows, get_layers = [0]) {
-        // Prepare layers_set from get_layers
-        // 1. Modify get_layers if needed: convert single T to array [0, T]
+        // Modify get_layers if needed: convert single T to array [0, T]
         if (typeof get_layers === 'number' || typeof get_layers === 'string') {
-            get_layers = [get_layers];
+            get_layers = [0, get_layers];
         }
-        const layers_list = new Set(['0']);
-        // convert all number-elements in layers_list toString
-        get_layers.forEach((item, index) => {
+        // Prepare layers_set from get_layers
+        const layers_list = new Set();
+        // convert all number-elements to string
+        get_layers.forEach(item => {
             if (typeof item === "number") {
                 item = item.toString();
             }
@@ -104,26 +104,34 @@ class HELML {
         });
         let lvl_ch = ':';
         let spc_ch = ' ';
-        let exploder_ch = "\n";
-        // 2. Skip "~" and spaces from begin
-        let stpos = 0;
-        for (; stpos < src_rows.length; stpos++) {
-            const ch = src_rows[stpos];
-            if (ch !== ' ' && ch !== "\t" && ch != '~')
-                break;
-        }
-        // 3. Detect string divider
-        for (exploder_ch of ["\r\n", "\n", "~", "\r"]) {
-            if (src_rows.indexOf(exploder_ch, stpos) !== -1) {
-                if (exploder_ch === "~" && src_rows.endsWith('~')) {
-                    lvl_ch = '.';
-                    spc_ch = '_';
-                }
-                break;
+        // Search postfix
+        let postfixIndex = src_rows.indexOf('~#'); //~#: ~
+        if (postfixIndex >= 0 && src_rows.charAt(postfixIndex + 4) === '~') {
+            // get control-chars from postfix
+            lvl_ch = src_rows.charAt(postfixIndex + 2);
+            spc_ch = src_rows.charAt(postfixIndex + 3);
+            // skip prefix
+            let stpos = 0;
+            for (; stpos < src_rows.length; stpos++) {
+                const ch = src_rows[stpos];
+                if (ch !== ' ' && ch !== "\t" && ch != '~')
+                    break;
             }
+            // cut string between prefix and postfix
+            src_rows = src_rows.substring(stpos, postfixIndex);
         }
-        // 4. Explode string from stpos
-        let str_arr = src_rows.substring(stpos).split(exploder_ch);
+        // Detect line divider
+        let exploder_ch = "\n";
+        for (exploder_ch of ["\r\n", "\r", "\n"]) {
+            if (src_rows.indexOf(exploder_ch) !== -1)
+                break;
+        }
+        // Replace all ~ to line divider
+        if (src_rows.indexOf('~') >= 0) {
+            src_rows = src_rows.replace(/~/gm, exploder_ch);
+        }
+        // Explode string to lines
+        let str_arr = src_rows.split(exploder_ch);
         return HELML._decode(str_arr, layers_list, lvl_ch, spc_ch);
     }
     static _decode(str_arr, layers_list, lvl_ch, spc_ch) {
@@ -153,8 +161,10 @@ class HELML {
             }
             // Split the line into a key and a value (or null if the line starts a new array)
             const firstDiv = line.indexOf(lvl_ch);
-            let key = firstDiv === -1 ? line : line.substring(0, firstDiv);
+            let key = firstDiv === -1 ? line : line.substring(0, firstDiv).trim();
             let value = firstDiv === -1 ? null : line.substring(firstDiv + 1);
+            if (!key.length)
+                continue; // skip empty keys
             // check min_level
             if (min_level < 0 || min_level > level) {
                 min_level = level;
@@ -405,6 +415,8 @@ HELML.ENABLE_BONES = true; // For encode: enable use "next"-keys like :--:
 HELML.ENABLE_SPC_IDENT = 1; // For encode: how many spaces will add at begin of string (*level)
 HELML.ENABLE_KEY_UPLINES = true; // For encode: adding empty string before array-create-keys
 HELML.ENABLE_HASHSYMBOLS = true; // For encode: adding # after nested-blocks
+HELML.ADD_PREFIX = false;
+HELML.ADD_POSTFIX = false;
 HELML.CUSTOM_FORMAT_DECODER = null;
 HELML.CUSTOM_VALUE_DECODER = null;
 HELML.CUSTOM_VALUE_ENCODER = null;
