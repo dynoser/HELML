@@ -314,6 +314,9 @@ class HELML {
             else if (fc === '"') {
                 return HELML.stripcslashes(encodedValue.slice(stpos + 1, -1));
             }
+            else if (fc === '%') {
+                return HELML.hexDecode(encodedValue.slice(stpos + 1));
+            }
         }
         let slicedValue = encodedValue.slice(stpos);
         if (stpos) {
@@ -411,6 +414,19 @@ class HELML {
             '\\\\': '\\'
         };
         return str.replace(/\\(n|t|r|b|f|v|0|\\)/g, (match) => controlCharsMap[match]);
+    }
+    static hexDecode(str) {
+        const hexc = '0123456789abcdefABCDEF';
+        let decoded = "";
+        for (let i = 0; i < str.length; i++) {
+            const fc = str.charAt(i);
+            const sc = str.charAt(i + 1);
+            if (hexc.indexOf(fc) >= 0 && hexc.indexOf(sc) >= 0) {
+                decoded += String.fromCharCode(parseInt(fc + sc, 16));
+                i++;
+            }
+        }
+        return decoded;
     }
 }
 HELML.ENABLE_BONES = true; // For encode: enable use "next"-keys like :--:

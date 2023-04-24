@@ -124,21 +124,19 @@ HELML:
 ```sh
 One: 1
 Two: Test
-
 Subarray:
   :123: 456
-
   :Sub2:
     ::title: X-Y coordinates
     ::X-sub-key:  -774
     ::Y-sub-key:  888
-  
   :yes:  T
   :not:  F
   :any:  N
-
 X:  4444
 Y:  55.66
+Z:"Co\tOr\tDi\nNates"
+Проверка: режим utf-8
 ```
 JSON:
 ```json
@@ -157,6 +155,8 @@ JSON:
 		"any": null
 	},
 	"X": 4444,
-	"Y": 55.66
+	"Y": 55.66,
+	"Z": "Co\tOr\tDi\nNates",
+	"Проверка": "режим utf-8"
 }
 ```
