@@ -502,10 +502,10 @@ This is a sign for parsers, indicating that there may be HELML markup next.
 Sometimes you need to mark the end of HELML markup, and there is a postfix for this: `~#: ~`
 
 Postfic is structured like this: two control characters are enclosed between `~#` and `~`: a colon and a space.
-These characters can be replaced by others. For example, for URL encoding it is convenient to replace them with "`.`" and "`_`",
-since the "urlencode" conversion (RFC 3986) does not change them. With this replacement, the postfix will be: `~#._~`.
+These characters can be replaced by others. For example, for URL encoding it is convenient to replace them with "`.`" and "`=`",
+since the "urlencode" conversion (RFC 3986) does not change them. With this replacement, the postfix will be: `~#.=~`.
 
-So, the end of HELML markup can be either `~#: ~` or `~#._~` for single-line URL mode.
+So, the end of HELML markup can be either `~#: ~` or `~#.=~` for single-line URL mode.
 
 All HELML variants are decoded by the same decoder.
 

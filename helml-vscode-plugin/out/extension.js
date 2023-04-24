@@ -239,7 +239,7 @@ function HELMLfromJSON(sel_text) {
     let objArr = fromjson.decodeJSONtry2(sel_text);
     if (objArr !== null) {
         const helml_str = HELML_1.default.encode(objArr);
-        if (!menucontext.docIsHELML) {
+        if (!menucontext.docIsHELML && (helml_str.charAt(0) !== '~')) {
             return "~\n" + helml_str;
         }
         return helml_str;

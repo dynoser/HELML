@@ -49,7 +49,7 @@ export default class HELML {
         let str_imp = one_line_mode ? "~" : HELML.EOL;
         let url_mode = one_line_mode === 1;
         let lvl_ch = url_mode ? '.' : ':';
-        let spc_ch = url_mode ? '_' : ' ';
+        let spc_ch = url_mode ? '=' : ' ';
 
         // is the object a list with sequential keys?
         let is_list: boolean = Array.isArray(arr);
@@ -355,17 +355,33 @@ export default class HELML {
     }
         
     static valueDecoder(encodedValue: string, spc_ch = ' '): string | number | null | boolean | undefined {
-        const fc: string = encodedValue.charAt(0);
-        if (spc_ch === fc) {
-            if (encodedValue.substring(0, 2) !== spc_ch + spc_ch) {
-                // if the string starts with only one space, return the string after it
-                return encodedValue.slice(1);
+        let stpos = (encodedValue.charAt(0) === spc_ch) ? ((encodedValue.charAt(1) === spc_ch) ? 2 : 1) : 0;
+
+        // raw
+        if (stpos === 1) {
+            return encodedValue.slice(1);
+        }
+
+        // special 0
+        if (!stpos) {
+            const fc: string = encodedValue.charAt(stpos);
+
+            if (fc === '-') {
+                return HELML.base64Udecode(encodedValue.slice(stpos + 1));
             }
-            // if the string starts with two spaces, then it encodes a non-string value
-            let slicedValue: string = encodedValue.slice(2); // strip left spaces
-            if (slicedValue in HELML.SPEC_TYPE_VALUES) {
-                return HELML.SPEC_TYPE_VALUES[slicedValue];
+
+            else if (fc === "'") {
+                return encodedValue.slice(stpos + 1, -1);
             }
+            
+            else if (fc === '"') {
+                return HELML.stripcslashes(encodedValue.slice(stpos + 1, -1));
+            }
+        }
+
+        let slicedValue = encodedValue.slice(stpos);
+
+        if (stpos) {
             if (/^-?\d+(.\d+)?$/.test(slicedValue)) {
                 // it's probably a numeric value
                 if (slicedValue.indexOf('.') !== -1) {
@@ -376,21 +392,18 @@ export default class HELML {
                     return parseInt(slicedValue, 10);
                 }
             }
-            // custom user-defined function
-            if (typeof HELML.CUSTOM_FORMAT_DECODER === 'function') {
-                return HELML.CUSTOM_FORMAT_DECODER(encodedValue, spc_ch);
+
+            if (slicedValue in HELML.SPEC_TYPE_VALUES) {
+                return HELML.SPEC_TYPE_VALUES[slicedValue];
             }
-            return slicedValue;
-        } else if ('"' === fc || "'" === fc) { // it's likely that the string is enclosed in single or double quotes
-            encodedValue = encodedValue.slice(1, -1); // trim the presumed quotes at the edges
-            return (fc === '"') ? HELML.stripcslashes(encodedValue) : encodedValue;
-        } else if ("-" === fc) {
-            encodedValue = encodedValue.slice(1);
-        } else if (typeof HELML.CUSTOM_FORMAT_DECODER === 'function') {
+        }
+
+        // custom user-defined function
+        if (typeof HELML.CUSTOM_FORMAT_DECODER === 'function') {
             return HELML.CUSTOM_FORMAT_DECODER(encodedValue, spc_ch);
         }
-        // if there are no spaces or quotes at the beginning, the value should be in base64
-        return HELML.base64Udecode(encodedValue);
+
+        return encodedValue;
     }
 
     static base64Uencode(str: string): string {
@@ -458,6 +471,8 @@ export default class HELML {
         '\\f': '\f',
         '\\v': '\v',
         '\\0': '\0',
+        '\\"': '"',
+        "\\'": "'",
         '\\\\': '\\'
         };
         return str.replace(/\\(n|t|r|b|f|v|0|\\)/g, (match: string | number) => controlCharsMap[match]);
