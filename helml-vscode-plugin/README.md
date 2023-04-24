@@ -1,7 +1,10 @@
 # HELML
+ - [HELML specification](https://github.com/dynoser/HELML/blob/master/docs/HELML_en.md)
+ - [HELML details](https://github.com/dynoser/HELML/blob/master/docs/README-HELML_en.md)
 
- - [HELML format definition (en)](https://github.com/dynoser/HELML/blob/master/docs/README-HELML_en.md)
- - [HELML format definition (ru)](https://github.com/dynoser/HELML/blob/master/docs/README-HELML_ru.md)
+
+ - [HELML specification (ru)](https://github.com/dynoser/HELML/blob/master/docs/HELML_ru.md)
+ - [HELML details (ru)](https://github.com/dynoser/HELML/blob/master/docs/README-HELML_ru.md)
 
 ## Features
 

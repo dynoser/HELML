@@ -3,10 +3,10 @@
 
 ## Control characters:
 
-  - `"~"` - `AltNewLine` - replaced with "\n". Alternative "line feed".
   - `":"` - `LevelChar` - at the beginning of the line indicates the nesting level of elements, then it separates `key` and `value`.
   - `" "` - `SpaceChar` - has value before `value` (i.e. after `key` and `LevelChar`). Allows you to distinguish between encoding options for a value.
   - `"-"` - `Base64Url` - the presence of a character at the beginning of `key` or `value` means representation encoded in Base64url.
+  - `"~"` - `AltNewLine` - replaced with "\n". Alternative "line feed".
 
 ## Not significant lines
 
@@ -121,7 +121,7 @@ Correspondence table example:
 An array in HELML markup and then the same in JSON markup:
 
 HELML:
-```json
+```sh
 One: 1
 Two: Test
 
