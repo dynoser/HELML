@@ -84,7 +84,7 @@ Support for other special keys is optional and implementation dependent.
 
 ## Values
 
-The number of `SpaceChar` characters before the `value` value is either 1 or otherwise.
+The number of `SpaceChar` characters before the `value` determines the `value` encoding format.
 
 ### Simple view
 
@@ -92,15 +92,21 @@ If the number of `SpaceChar` characters before `value` is 1, then `value` is tre
 
 ### Special value representations
 
-If the number of `SpaceChar` characters before `value` is not equal to 1, then these are special cases of encoding `value`.
+A different number of `SpaceChar` characters before `value` other than 1 indicates a different encoding of `value`.
 
-  - prefix `"-"` before `value` means that `value` is a string encoded in Base64Url
-  - if `value` is enclosed in double or single quotes, they are discarded.
-  - if `value` is enclosed in double quotes, then character escaping is additionally processed, at least for `\n`, `\r`, `\t`, `\0`, `\\`.
+If there are 0 `SpaceChar` characters before `value` (that is, these characters are missing), this indicates a prefix encoding of `value`
+
+  - prefix `"-"` means that `value` is a string encoded in Base64Url
+  - prefix `"%"` means that `value` is a byte string encoded in HEX format
+  - the prefix `"` (double quote) means that this is a quoted string, and the value can contain escaped characters.
+   (any decoder must support at least escaping the following options: `\n`, `\r`, `\t`, `\0`, `\\`)
+  - prefix `'` (single quote) means string without escaping characters, decoder just discards quotes.
+
+If there are 2 `SpaceChar` characters before `value`, this indicates the content-specific encoding of `value`:
+
+  - if `value` has a direct match in the lookup table, then it is replaced by the corresponding value.
   - if `value` can be interpreted as an integer decimal number, then it gets a numeric type.
   - if `value` contains the character "`.`" and can be interpreted as a fractional number, then it gets a fractional type.
-  - if `value` has a match in the lookup table, then the corresponding value is obtained.
-The mapping table depends on the implementation language.
 
 Correspondence table example:
 
