@@ -86,7 +86,7 @@ Support for other special keys is optional and implementation dependent.
 
 The number of `SpaceChar` characters before the `value` determines the `value` encoding format.
 
-### Simple view
+### Simple value
 
 If the number of `SpaceChar` characters before `value` is 1, then `value` is treated "as is" (spaces around the edges are discarded)
 
@@ -97,7 +97,7 @@ A different number of `SpaceChar` characters before `value` other than 1 indicat
 If there are 0 `SpaceChar` characters before `value` (that is, these characters are missing), this indicates a prefix encoding of `value`
 
   - prefix `"-"` means that `value` is a string encoded in Base64Url
-  - prefix `"%"` means that `value` is a byte string encoded in HEX format
+  - prefix `"%"` means that `value` is a string encoded in HEX format (optional supported)
   - the prefix `"` (double quote) means that this is a quoted string, and the value can contain escaped characters.
    (any decoder must support at least escaping the following options: `\n`, `\r`, `\t`, `\0`, `\\`)
   - prefix `'` (single quote) means string without escaping characters, decoder just discards quotes.
@@ -128,6 +128,7 @@ An array in HELML markup and then the same in JSON markup:
 
 HELML:
 ```sh
+~
 One: 1
 Two: Test
 Subarray:
@@ -143,6 +144,7 @@ X:  4444
 Y:  55.66
 Z:"Co\tOr\tDi\nNates"
 Проверка: режим utf-8
+H:%0D0A7E
 ```
 JSON:
 ```json
@@ -163,6 +165,7 @@ JSON:
 	"X": 4444,
 	"Y": 55.66,
 	"Z": "Co\tOr\tDi\nNates",
-	"Проверка": "режим utf-8"
+	"Проверка": "режим utf-8",
+	"H": "\r\n~"
 }
 ```

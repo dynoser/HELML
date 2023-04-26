@@ -417,13 +417,14 @@ class HELML {
         };
         return str.replace(/\\(n|t|r|b|f|v|0|\\)/g, (match) => controlCharsMap[match]);
     }
-    static hexDecode(str) {
-        const hexc = '0123456789abcdefABCDEF';
+    static hexDecode(encoded) {
+        const hexc1 = '0123456789abcdefABCDEF';
+        const hexc2 = hexc1 + ' ';
         let decoded = "";
-        for (let i = 0; i < str.length; i++) {
-            const fc = str.charAt(i);
-            const sc = str.charAt(i + 1);
-            if (hexc.indexOf(fc) >= 0 && hexc.indexOf(sc) >= 0) {
+        for (let i = 0; i < encoded.length; i++) {
+            const fc = encoded.charAt(i);
+            const sc = encoded.charAt(i + 1);
+            if (hexc1.indexOf(fc) >= 0 && hexc2.indexOf(sc) >= 0) {
                 decoded += String.fromCharCode(parseInt(fc + sc, 16));
                 i++;
             }

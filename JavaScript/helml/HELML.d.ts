@@ -41,5 +41,5 @@ export default class HELML {
     static base64Udecode(str: string): string | null;
     static iterablize<T>(arr: T[] | Iterable<T> | Map<any, T> | Set<T>): T[] | Iterable<T>;
     static stripcslashes(str: string): string;
-    static hexDecode(str: string): string | null;
+    static hexDecode(encoded: string): string | null;
 }

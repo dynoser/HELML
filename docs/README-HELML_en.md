@@ -6,6 +6,8 @@
 
 HELML (HEader-Like Markup Language) is a marking language similar to the HTTP headlines format.
 
+[HELML specification](https://github.com/dynoser/HELML/blob/master/docs/HELML_en.md)
+
 For example, you can decode this text from HELML:
 ```sh
 Host: github.com
