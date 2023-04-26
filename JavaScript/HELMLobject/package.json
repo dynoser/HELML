@@ -1,0 +1,31 @@
+{
+  "name": "helmlobject",
+  "version": "1.0.0",
+  "description": "Object for encode/decode HELML data",
+  "main": "HELMLobject.js",
+  "type": "commonjs",
+  "scripts": {
+    "build": "tsc"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dynoser/HELML.git#master"
+  },
+  "keywords": [
+    "HELML",
+    "JSON",
+    "YAML",
+    "Arrays",
+    "Convertation"
+  ],
+  "author": "dynoser",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/dynoser/HELML/issues"
+  },
+  "homepage": "https://github.com/dynoser/HELML/tree/master#readme",
+  "devDependencies": {
+    "@types/node": "^18.16.0",
+    "typescript": "^5.0.4"
+  }
+}
