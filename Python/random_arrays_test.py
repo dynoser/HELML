@@ -183,7 +183,7 @@ class TestHELML(unittest.TestCase):
 
         assert decoded_data == expected_data, f"Error: decoded data {decoded_data}, expected data {expected_data}"
 
-        expected_url = 'A~.0.__0~.1.__1~.2~..0._In0~..1.__888~.3._Four~.4.-~B._B-key~C._C-key~D._D-key~TR.__T~FL.__F~NO.__N~'
+        expected_url = 'A~.0.==0~.1.==1~.2~..0.=In0~..1.==888~.3.=Four~.4.-~B.=B-key~C.=C-key~D.=D-key~TR.==T~FL.==F~NO.==N~#.=~'
         encoded_data = HELML.encode(decoded_data, 1)
         assert encoded_data == expected_url, f"Error: URL-encoded data {encoded_data}, expected data {expected_url}"
 
@@ -441,15 +441,15 @@ class TestHELML(unittest.TestCase):
 
 if __name__ == '__main__':
     t = TestHELML()
-    t.test_min_level()
+    t.test_encode_decode_url_mode()
     t.test_main_types()
+    t.test_min_level()
     t.test_b64_on_values()
     t.test_b64_on_keys()
     t.test_utf8_codes()
     t.test_dict_num_keys()
     t.test_in_array_types()
     t.test_layer_next()
-    t.test_encode_decode_url_mode()
     t.test_custom_decoder()
     t.test_special_types()
     t.test_nan_type()

@@ -22,6 +22,8 @@ class HELML:
     ENABLE_BONES = True # For encode: enable use "next"-keys like :--:
     ENABLE_KEY_UPLINES = True # For encode: add empty line before create-array-keys
     ENABLE_HASHSYMBOLS = True # For encode: adding # after nested-blocks
+    ADD_PREFIX = False
+    ADD_POSTFIX = False
 
     @staticmethod
     def encode(
@@ -40,14 +42,14 @@ class HELML:
         str_imp = "~" if one_line_mode else "\n"
         url_mode = one_line_mode == 1
         lvl_ch = "." if url_mode else ":"
-        spc_ch = "_" if url_mode else " "
+        spc_ch = "=" if url_mode else " "
 
         is_list = HELML.num_keys_cnt(arr)
         
         HELML._encode(arr, results_arr, 0, lvl_ch, spc_ch, is_list)
 
-        if url_mode:
-            results_arr.append('')
+        if lvl_ch != ':' or spc_ch != ' ' or HELML.ADD_POSTFIX:
+            results_arr.append('#' + lvl_ch + spc_ch + '~')
         elif one_line_mode:
             # Remove whitespace from beginning and end of each string
             results_arr = [s.strip() for s in results_arr]
@@ -77,7 +79,7 @@ class HELML:
             if not isinstance(key, str):
                 key = str(key)
 
-            if is_list and HELML.ENABLE_BONES and spc_ch == ' ':
+            if is_list and HELML.ENABLE_BONES and spc_ch == " ":
                 key = '--'
             elif not is_list:
                 # encode key to base64url if contains unwanted characters
@@ -85,6 +87,8 @@ class HELML:
                 fc = key[:1]
                 # encode key in base64url if it contains unwanted characters
                 if lvl_ch in key or fc == "#" or fc == spc_ch or fc == ' ' or fc == ''  or key[-1] == spc_ch or key[-1] == ' ':
+                    fc = '-'
+                elif level == 0 and fc == '/' and key.startswith('//'): # prevent '//' at begin of the line
                     fc = '-'
                 elif not (re.match(r'^[ -}]+$', key) if spc_ch == '_' else re.match(r'^[^\x00-\x1F\x7E-\xFF]+$', key)):
                     fc = '-'
@@ -129,30 +133,47 @@ class HELML:
         get_layers: Union[int, str, Set[Union[str, int]], List[Union[str, int]]] = [0]
     ) -> Dict:
 
-        lvl_ch: str = ":"
-        spc_ch: str = " "
-
-        # Prepare layers_set from get_layers
-        # 1. Modify get_layers if needed: convert single T to array [0, T]
+        # Modify get_layers if needed: convert single T to array [0, T]
         if isinstance(get_layers, (int, str)):
             get_layers = ['0', get_layers]
-        # 2. Create layers_set and set all values from get_layers (str)
+        # Prepare layers_set from get_layers (str)
         layers_set = set()
         for i in get_layers:
             if not isinstance(i, str):
                 i = str(i)
             layers_set.add(i)
 
+        lvl_ch: str = ":"
+        spc_ch: str = " "
+
+        # Search postfix
+        postfixIndex = src_rows.find('~#'); #postfix "~#: ~"
+        if postfixIndex >= 0 and src_rows[postfixIndex+4] == '~':
+            # get control-chars from postfix
+            lvl_ch = src_rows[postfixIndex+2]
+            spc_ch = src_rows[postfixIndex+3]
+
+            # skip prefix
+            stpos = 0
+            for ch in src_rows:
+                if ch != ' ' and ch != "\t" and ch != '~':
+                    break
+                stpos += 1
+
+            # cut string between prefix and postfix
+            src_rows = src_rows[stpos:postfixIndex]
 
         # Explode src_rows to lines
-        for exploder_ch in ["\n", "\r", "~"]:
+        for exploder_ch in ["\r\n", "\r", "\n"]:
             if exploder_ch in src_rows:
-                if "~" == exploder_ch and src_rows[-1] == "~":
-                    lvl_ch = "."
-                    spc_ch = "_"
                 break
+        
+        # Replace all ~ to line divider
+        src_rows = src_rows.replace("~", "\n")
 
+        # Explode string to lines
         str_arr = src_rows.split(exploder_ch)
+
         return HELML._decode(str_arr, layers_set, lvl_ch, spc_ch)
 
     def _decode(
@@ -161,14 +182,13 @@ class HELML:
         lvl_ch: str,
         spc_ch: str
     ) -> Dict:
+        # select value decoder function custom or internal default
+        value_deco_fun = HELML.CUSTOM_VALUE_DECODER if HELML.CUSTOM_VALUE_DECODER is not None else HELML.valueDecoder
         
         # layer values prepare
         layer_init: str = '0'
         layer_curr:str = layer_init
-        all_layers = set([layer_init])
-
-        # select value decoder function custom or internal default
-        value_deco_fun = HELML.CUSTOM_VALUE_DECODER if HELML.CUSTOM_VALUE_DECODER is not None else HELML.valueDecoder
+        all_layers = set(['0'])
 
         # Initialize result array and stack for keeping track of current array nesting
         result = {}
@@ -184,7 +204,7 @@ class HELML:
             line = line.strip()
 
             # Skip empty lines and comment lines starting with '#'
-            if not len(line) or line[0] == "#":
+            if not len(line) or line[0] == "#" or line.startswith('//'):
                 continue
 
             # Calculate the level of nesting for the current line by counting the number of colons at the beginning
@@ -199,8 +219,11 @@ class HELML:
             # Split the line into a key and a value (or null if the line starts a new array)
             parts = line.split(lvl_ch, 1)
         
-            key = parts[0] if parts[0] else 0
+            key = parts[0] if parts[0].strip() else ""
             value = parts[1] if len(parts) > 1 else None
+
+            if len(key) == 0:
+                continue
 
             # check min_level
             if min_level < 0 or min_level > level:
@@ -221,12 +244,12 @@ class HELML:
             # Decode the key if it starts with an equals sign
             if key.startswith("-"):
                 # Next number keys
-                if key == '--' or key == '---':
+                if key == '--':
                     # Next Num keys
                     key = (str)(len(parent))
 
                 # Layer control keys
-                elif key == '-+' or key == '-++':
+                elif key == '-+' or key == '-++' or key == '---':
                     if not value is None:
                         value = value.strip()
                     if key == '-++':
@@ -254,9 +277,8 @@ class HELML:
                     tolist.append(stack.copy())
             elif layer_curr in layers_set:
                 # Decode the value by selected value-decoder-function
-                value = value_deco_fun(value, spc_ch)
                 # Add the key-value pair to the current dictionary
-                parent[key] = value
+                parent[key] = value_deco_fun(value, spc_ch)
 
         # try convert nested arrays by keys-pathes from tolist
         for stack in tolist:
@@ -311,14 +333,21 @@ class HELML:
             elif value[0] == spc_ch or value[-1] == spc_ch or value[-1] == ' ':
                 # for empty strings or those that have spaces at the beginning or end
                 return "'" + value + "'"
-            else:
-                # if the value is simple, just add one space at the beginning
-                return spc_ch + value
+
+            # if the value is simple, just add one space at the beginning
+            return spc_ch + value
+
+        elif value_type == "int":
+            return spc_ch * 2 + str(value)
+
         elif value_type == "bool":
             value = "T" if value else "F"
+
         elif value_type == "NoneType":
             value = "N"
+
         elif value_type == "float":
+
             value = str(value)
             if value == 'nan':
                 value = 'NAN'
@@ -327,13 +356,13 @@ class HELML:
             elif value == '-inf':
                 value = 'NIF'
             elif spc_ch == "_": # for url-mode because float contain dot-inside
-                return HELML.base64Uencode(value)
+                return '-' + HELML.base64Uencode(value)
 
         return spc_ch * 2 + str(value)
 
 
     @staticmethod
-    def valueDecoder(encoded_value: str, spc_ch: str = ' ') -> Union[str, int, float, bool, None]:
+    def valueDecoder(encodedValue: str, spc_ch: str = ' ') -> Union[str, int, float, bool, None]:
         """
         Decodes a HELML formatted string into its original value.
 
@@ -345,48 +374,53 @@ class HELML:
             Union[str, int, float, bool, None]: The decoded value, which can be of type str, int, float, bool, or None.
         """
 
-        first_char = '' if not len(encoded_value) else encoded_value[0]
+        # calc stpos by first-2-chars of encodedValue
+        #stpos = 2 if encodedValue.startswith(spc_ch*2) else 1 if encodedValue.startswith(spc_ch) else 0
+        stpos = 0
+        while encodedValue.startswith(spc_ch, stpos):
+            stpos += 1
 
-        if spc_ch == first_char:
-            if encoded_value[:2] != spc_ch * 2:
-                # if the string starts with only one space, return the string after it
-                return encoded_value[1:]
-            # if the string starts with two spaces, then it encodes a non-string value
-            sliced_value = encoded_value[2:]  # strip left spaces
+        # raw
+        if stpos == 1:
+            return encodedValue[1:]
+
+        # special 0
+        if stpos == 0:
+            fc = encodedValue[0]
+
+            if fc == '-':
+                return HELML.base64Udecode(encodedValue[1:])
+            elif fc == "'":
+                return encodedValue[1:-1]
+            elif fc == '"':
+                return encodedValue[1:-1].encode('utf-8').decode('unicode_escape')
+            elif fc == '%':
+                return HELML.hexDecode(encodedValue[1:])
+
+        sliced_value = encodedValue[stpos:]
+
+        # stpos != 1
+        if stpos > 1:
+            # content-dependent decoding
             if sliced_value in HELML.SPEC_TYPE_VALUES:
                 return HELML.SPEC_TYPE_VALUES[sliced_value]
 
-            if HELML.is_numeric(sliced_value):
+            elif HELML.is_numeric(sliced_value):
                 # it's probably a numeric value
                 if '.' in sliced_value:
                     # if there's a decimal point, it's a floating point number
                     return float(sliced_value)
                 else:
                     # if there's no decimal point, it's an integer
-                    return int(sliced_value)
-
-            if HELML.CUSTOM_FORMAT_DECODER is not None:
-                encoded_value = HELML.CUSTOM_FORMAT_DECODER(encoded_value, spc_ch)
-
-            return encoded_value
-        elif first_char == '"' or first_char == "'":  # it's likely that the string is enclosed in single or double quotes
-            encoded_value = encoded_value[1:-1] # trim the presumed quotes at the edges and return the interior
-            if first_char == "'":
-                return encoded_value
-            try:
-                return encoded_value.encode('utf-8').decode('unicode_escape')
-            except ValueError:
-                return False
-        elif first_char == '-':
-            return HELML.base64Udecode(encoded_value[1:])
+                    return int(sliced_value, 10)
 
         # if there are no spaces or quotes or "-" at the beginning
         if HELML.CUSTOM_FORMAT_DECODER is not None:
             # use custom-decoder if defined
-            return HELML.CUSTOM_FORMAT_DECODER(encoded_value, spc_ch)
+            return HELML.CUSTOM_FORMAT_DECODER(encodedValue, spc_ch)
 
-        # fallback: will return decoded string or None
-        return HELML.base64Udecode(encoded_value)
+        # fallback: return "as is"
+        return encodedValue
 
     @staticmethod
     def base64Uencode(string: str) -> str:
@@ -406,7 +440,22 @@ class HELML:
             return decoded
         except Exception:
             return None
-
+        
+    @staticmethod
+    def hexDecode(encoded: str) -> Union[str, None]:
+        hexc1 = '0123456789abcdefABCDEF'
+        hexc2 = hexc1 + ' '
+        decoded = ''
+        i = 0
+        while i < len(encoded):
+            fc = encoded[i]
+            sc = encoded[i+1] if i+1 < len(encoded) else None
+            if fc in hexc1 and sc in hexc2:
+                decoded += chr(int(fc + sc, 16))
+                i += 2
+            else:
+                return None
+        return decoded
 
     @staticmethod
     def is_numeric(value: str) -> bool:
