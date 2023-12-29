@@ -97,6 +97,13 @@ export function activate(context: vscode.ExtensionContext) {
     );
 
     context.subscriptions.push(
+        vscode.commands.registerCommand('helml.toHex', cre_sel_conv_fn(SELECTIONtoHEX))
+    );
+    context.subscriptions.push(
+        vscode.commands.registerCommand('helml.fromHex', cre_sel_conv_fn(SELECTIONfromHEX))
+    );
+
+    context.subscriptions.push(
         vscode.commands.registerCommand('helml.toBase64url', cre_sel_conv_fn(SELECTIONtoBase64url))
     );
 
@@ -133,6 +140,62 @@ export function activate(context: vscode.ExtensionContext) {
 }
 
 export function deactivate() { }
+
+export function SELECTIONtoHEX(sel_text: string): string | null {
+    return '%' + toHex(sel_text);
+}
+
+export function toHex(sel_text: string): string | null {
+    if (typeof Buffer !== 'undefined') {
+        try {
+            return Buffer.from(sel_text, 'utf-8').toString('hex');
+        } catch(e: any) {
+        }
+    }
+    try {
+        const base64String = HELML.base64Uencode(sel_text, false);
+        return Base64ToHex(base64String);
+    } catch(e: any) {
+        vscode.window.showErrorMessage(`Failed encode to HEX: ${e.message}`);
+    }
+    return null;
+}
+
+export function Base64ToHex(base64String: string): string {
+    const base64Chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=';
+    let hexString = '';
+
+    for (let i = 0; i < base64String.length; i += 4) {
+        const block = (
+            (base64Chars.indexOf(base64String[i]) << 18) |
+            (base64Chars.indexOf(base64String[i + 1]) << 12) |
+            (base64Chars.indexOf(base64String[i + 2]) << 6) |
+            (base64Chars.indexOf(base64String[i + 3]))
+        );
+        const validHexDigits = base64String[i + 2] === '=' ? 2 : base64String[i + 3] === '=' ? 4 : 6;
+
+        for (let j = 0; j < validHexDigits; j++) {
+            const hexDigit = (block >> (20 - j * 4)) & 0xF;
+            hexString += hexDigit.toString(16);
+        }
+    }
+    return hexString;
+}
+
+export function SELECTIONfromHEX(sel_text: string): string | null {
+    try {
+        const pfx = sel_text.charAt(0) === '%';
+        const hexString = pfx ? sel_text.substring(1) : sel_text;
+        // const decodedBuffer = Buffer.from(hexString, 'hex');
+        // const decodedText = decodedBuffer.toString('utf-8');
+        const decodedText = HELML.hexDecode(hexString);
+        if (pfx) return ' ' + decodedText;
+        return decodedText;
+    } catch(e: any) {
+        vscode.window.showErrorMessage(`Failed to decode from HEX: ${e.message}`);
+    }
+    return null;
+}
 
 export function SELECTIONtoBase64url(sel_text: string): string | null {
     try {
