@@ -1,10 +1,21 @@
-import type { fakeWindow } from './window.d.ts';
+import type { fakeWindow } from './custom.d.ts';
 
-declare var window: fakeWindow;
-declare global {
-    function btoa(input: string): string;
-    function atob(input: string): string;
+declare let window: fakeWindow;
+
+export type HELMLelemIn  = string | number | null | boolean | bigint | undefined;
+export type HELMLelemOut = string | number | null | boolean | undefined;
+
+export type HELMLobj = {
+    [key: string]: HELMLelemOut | HELMLelemOut[] | HELMLobj;
 }
+
+/* VEZDES:
+ :URL: https://raw.githubusercontent.com/dynoser/vezdes/main/src/HELML.ts
+ :TIME:  1709496716
+ :PUBKEY: aOk1rVVhWoaYZzThCNWiaBMGeaQMJ_hAZT-HTGfZkKY
+ :HASH: MiizS4Hm5iNZYo7uOypevLzfM4WAM3X3u1TE6msPUok
+ :SIGNATURE: 8wm9Zwk3Q_gnuKuPZdKYNNypmKcTW_HokQVR2Q_1nJpcxnlpM72OdhNwKpOJIgfBh78A7giFnRHAV7aX5RVuAw
+# /VEZDES */
 
 export default class HELML {
     static ENABLE_BONES: boolean = true; // For encode: enable use "next"-keys like :--:
@@ -44,7 +55,7 @@ export default class HELML {
      *     - 2 - single-line encoding with trimmed strings and removed empty and comment lines
      * @returns {string} The encoded HELM-like string.
      */
-    static encode(inArr: any, oneLineMode: number = 0) {
+    public static encode(inArr: any, oneLineMode: number = 0): string {
         let outArr: string[] = HELML.ADD_PREFIX ? ['~'] : [];
 
         // Check arr and convert to iterable (if possible)
@@ -95,14 +106,14 @@ export default class HELML {
         return outArr.join(strImp);
     }
 
-    static _encode(
+    public static _encode(
         inArr: { [x: string]: any; },
         outArr: { push: any; },
         level = 0,
         lvlCh = ":",
         spcCh = " ",
         isList = false
-    ) {
+    ): void {
 
         // Set value encoder function as default valueEncoder or custom user function
         const valueEncoFun = HELML.CUSTOM_VALUE_ENCODER === null ? HELML.valueEncoder : HELML.CUSTOM_VALUE_ENCODER;
@@ -165,10 +176,10 @@ export default class HELML {
         }
     }
     
-    static decode(
+    public static decode(
         srcRows: string,
         getLayers: number | string | (string | number)[] = [0]
-    ) {
+    ): HELMLobj {
 
         // Modify get_layers if needed: convert single T to array [0, T]
         if (typeof getLayers === 'number' || typeof getLayers === 'string') {
@@ -222,7 +233,7 @@ export default class HELML {
         return HELML._decode(str_arr, layersList, lvlCh, spcCh);
     }
 
-    static _decode(strArr: string[], layersList: Set<string>, lvlCh: string, spcCh: string) {
+    public static _decode(strArr: string[], layersList: Set<string>, lvlCh: string, spcCh: string): HELMLobj {
 
         // Set value decoder function as default valueDecoder or custom user function
         const valueDecoFun = HELML.CUSTOM_VALUE_DECODER === null ? HELML.valueDecoder : HELML.CUSTOM_VALUE_DECODER;
@@ -365,7 +376,7 @@ export default class HELML {
         return result;
     }
 
-    static valueEncoder(value: string | number | null | boolean | number | bigint | undefined, spcCh = ' ') {
+    public static valueEncoder(value: HELMLelemIn, spcCh = ' '): string {
         if (typeof value === 'string') {
             if ('' === value) {
                 return '-';
@@ -397,8 +408,8 @@ export default class HELML {
                 return spcCh + value;
             }
         } else {
-            const type = typeof value;
-            switch (type) {
+            const typeV = typeof value;
+            switch (typeV) {
                 case 'boolean':
                     value = (value ? 'T' : 'F'); break;
                 case 'undefined':
@@ -424,13 +435,13 @@ export default class HELML {
                     }
                     /* falls through */
                 default:
-                    throw new Error(`Cannot encode value of type ${type}`);
+                    throw new Error(`Cannot encode value of type ${typeV}`);
             }
         }
         return spcCh + spcCh + value;
     }
         
-    static valueDecoder(encodedValue: string, spcCh = ' '): string | number | null | boolean | undefined {
+    public static valueDecoder(encodedValue: string, spcCh = ' '): HELMLelemOut {
         let stPos = (encodedValue.charAt(0) === spcCh) ? ((encodedValue.charAt(1) === spcCh) ? 2 : 1) : 0;
 
         // raw
@@ -486,7 +497,7 @@ export default class HELML {
         return encodedValue;
     }
 
-    static base64Uencode(str: string, urlMode: boolean = true): string {
+    public static base64Uencode(str: string, urlMode: boolean = true): string {
         let base64: string;
 
         if (typeof window !== 'undefined') {
@@ -502,15 +513,15 @@ export default class HELML {
         } else if (typeof btoa === "function") {
             base64 = btoa(str);
         } else {
-            throw new Error('Not found me base64-encoder');
+            throw new Error('Not found base64-encoder');
         }
         return urlMode ? base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '') : base64;
     }
             
-    static base64Udecode(str: string): string | null {
+    public static base64Udecode(str: string): string | null {
         str = str.replace(/-/g, '+').replace(/_/g, '/');
         while (str.length % 4) {
-        str += '=';
+            str += '=';
         }
     
         try {
@@ -528,9 +539,9 @@ export default class HELML {
         } catch (e) {
             return null;
         }
-    }    
+    }
 
-    static iterablize<T>(arr: T[] | Iterable<T> | Map<any, T> | Set<T>): T[] | Iterable<T> {
+    public static iterablize<T>(arr: T[] | Iterable<T> | Map<any, T> | Set<T>): T[] | Iterable<T> {
         if (typeof arr[Symbol.iterator] !== 'function') {
             arr[Symbol.iterator] = function* () {
                 const entries: [string, any][] = [];
@@ -548,7 +559,7 @@ export default class HELML {
         return arr;
     }
 
-    static stripcslashes(str: string): string {
+    public static stripcslashes(str: string): string {
         const controlCharsMap: Record<string, string> = {
         '\\n': '\n',
         '\\t': '\t',
@@ -564,22 +575,7 @@ export default class HELML {
         return str.replace(/\\(n|t|r|b|f|v|0|\\)/g, (match: string | number) => controlCharsMap[match]);
     }
 
-    // static hexDecode(encoded: string): string | null {
-    //     const hexc1 = '0123456789abcdefABCDEF';
-    //     const hexc2 = hexc1 + ' ';
-    //     let decoded = "";
-    //     for (let i = 0; i < encoded.length; i++) {
-    //         const fc = encoded.charAt(i);
-    //         const sc = encoded.charAt(i+1);
-    //         if (hexc1.indexOf(fc) >= 0 && hexc2.indexOf(sc) >= 0) {
-    //             decoded += String.fromCharCode(parseInt(fc + sc, 16));
-    //             i++;
-    //         }
-    //     }
-    //     return decoded;
-    // }
-
-    static hexDecode(str: string): string | null {
+    public static hexDecode(str: string): string | null {
         const hexArr: string[] = [];
         const l = str.length;
         const regex = /^[0-9a-fA-F]$/;
